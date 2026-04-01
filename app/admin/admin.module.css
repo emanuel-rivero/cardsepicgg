@@ -1,0 +1,265 @@
+.page {
+  padding: 2.5rem 0 4rem;
+  min-height: 100vh;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0;
+}
+
+.tab {
+  padding: 0.65rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all var(--transition);
+  letter-spacing: 0.05em;
+  text-transform: capitalize;
+}
+
+.tab:hover {
+  color: var(--text-secondary);
+}
+
+.tabActive {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+.tabContent {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Two column layout */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+
+/* Panels */
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+}
+
+.panelTitle {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.04em;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 500px) {
+  .formGrid { grid-template-columns: 1fr; }
+}
+
+.checkboxRow {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--purple);
+}
+
+.imgPreview {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  max-height: 160px;
+}
+
+.imgPreview img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.successMsg {
+  background: rgba(50, 200, 100, 0.1);
+  border: 1px solid rgba(50, 200, 100, 0.25);
+  color: #5fd98b;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+/* List */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  transition: border-color var(--transition);
+}
+
+.listItem:hover {
+  border-color: var(--border-default);
+}
+
+.listItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.listItemName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.listItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.listItemFaction {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.listItemActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.miniRarity {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.rarity-common   { color: var(--rarity-common); }
+.rarity-uncommon { color: var(--rarity-uncommon); }
+.rarity-rare     { color: var(--rarity-rare); }
+.rarity-epic     { color: var(--rarity-epic); }
+.rarity-mythic   { color: var(--rarity-mythic); }
+.rarity-hero     { color: var(--rarity-hero); }
+.rarity-legendary{ color: var(--rarity-legendary); }
+
+.inactiveBadge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(200, 100, 50, 0.15);
+  color: #f0a050;
+  border-radius: 4px;
+  border: 1px solid rgba(200, 100, 50, 0.3);
+}
+
+.adminTag {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold);
+  border-radius: 4px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  font-weight: 600;
+}
+
+.emptyList {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 2rem;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 1.5rem 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
