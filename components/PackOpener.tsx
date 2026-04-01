@@ -22,6 +22,10 @@ const TEAR_BOTTOM = `polygon(
   100% 100%, 0% 100%
 )`;
 
+/**
+ * Orquestra a experiencia de abertura de pacotes.
+ * Controla fases de animacao, efeitos sonoros, sorteio de cartas e revelacao progressiva.
+ */
 export default function PackOpener() {
   const { userPacks, allPacks, openPack } = useApp();
   const router = useRouter();
@@ -46,13 +50,18 @@ export default function PackOpener() {
     setSelectedPackId(null);
   }, [userPacks, urlPackId]);
 
+  /** Limpa todos os timers ativos para evitar race conditions entre fases. */
   const clearTimers = () => {
     timerRefs.current.forEach(clearTimeout);
     timerRefs.current = [];
   };
 
+  /** Registra timeout para posterior cleanup centralizado. */
   const push = (t: ReturnType<typeof setTimeout>) => timerRefs.current.push(t);
 
+  /**
+   * Faz flip da carta revelada e toca efeito especial quando a carta e nova.
+   */
   const handleCardClick = (index: number, isNew: boolean) => {
     if (!flippedCards[index]) {
       setFlippedCards((prev) => ({ ...prev, [index]: true }));
@@ -62,6 +71,10 @@ export default function PackOpener() {
     }
   };
 
+  /**
+   * Inicia pipeline de abertura do pack:
+   * shaking -> tearing -> burst -> openPack(store) -> reveal sequencial.
+   */
   const handleOpen = (forcePackId?: string) => {
     const targetId = forcePackId || selectedPackId;
     if (!targetId || phase !== 'idle') return;
@@ -102,6 +115,7 @@ export default function PackOpener() {
     }, 650));
   };
 
+  /** Reseta estado visual para nova abertura manual. */
   const handleReset = () => {
     clearTimers();
     setPhase('idle');
@@ -112,6 +126,7 @@ export default function PackOpener() {
     setSelectedPackId(null);
   };
 
+  /** Revela todas as cartas atualmente visiveis e dispara audio de destaque quando aplicavel. */
   const handleRevealAll = () => {
     if (phase !== 'revealing' && phase !== 'done') return;
     const newFlips: Record<number, boolean> = { ...flippedCards };
@@ -167,6 +182,7 @@ export default function PackOpener() {
     Common: '◆', Uncommon: '◈', Rare: '★', Epic: '✦', Legendary: '♛', Mythic: '♜', Hero: '🜲',
   };
 
+  /** Render helper para badge de raridade na face frontal da carta revelada. */
   const renderRarityStars = (rarity: string) => {
     if (rarity === 'Mythic' || rarity === 'Hero') {
       return <>{RARITY_ICON[rarity]} {rarity}</>;

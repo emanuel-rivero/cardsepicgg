@@ -3,6 +3,10 @@
 import { Suspense } from 'react';
 import PackOpener from '@/components/PackOpener';
 
+/**
+ * Home autenticada focada na abertura de pacotes.
+ * Usa Suspense para fallback visual durante carregamento do componente principal.
+ */
 export default function HomePage() {
   return (
     <Suspense fallback={

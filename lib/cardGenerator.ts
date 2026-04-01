@@ -10,6 +10,10 @@ const RARITY_WEIGHTS: Record<Rarity, number> = {
   Hero: 0.1,
 };
 
+/**
+ * Sorteia uma raridade com base na distribuicao percentual configurada em RARITY_WEIGHTS.
+ * O algoritmo acumula pesos ate ultrapassar um valor aleatorio em [0, 100).
+ */
 function rollRarity(): Rarity {
   const roll = Math.random() * 100;
   let cumulative = 0;
@@ -20,6 +24,10 @@ function rollRarity(): Rarity {
   return 'Common';
 }
 
+/**
+ * Seleciona uma carta da lista usando peso relativo de dropWeight.
+ * Quanto maior o dropWeight, maior a chance da carta ser retornada.
+ */
 function pickWeightedCard(cards: Card[]): Card {
   const totalWeight = cards.reduce((sum, c) => sum + c.dropWeight, 0);
   let roll = Math.random() * totalWeight;
@@ -30,6 +38,14 @@ function pickWeightedCard(cards: Card[]): Card {
   return cards[cards.length - 1];
 }
 
+/**
+ * Gera um conjunto de cartas para abertura de pack.
+ * Etapas:
+ * 1) filtra cartas ativas;
+ * 2) sorteia raridade por peso global;
+ * 3) escolhe carta por dropWeight dentro da raridade;
+ * 4) se uma raridade nao tiver cartas, aplica fallback para outras raridades disponiveis.
+ */
 export function rollCards(allCards: Card[], count: number): Card[] {
   const activeCards = allCards.filter((c) => c.isActive);
   const result: Card[] = [];
@@ -61,6 +77,10 @@ export function rollCards(allCards: Card[], count: number): Card[] {
 
 // ── Mint System ─────────────────────────────────────────────────────────────
 
+/**
+ * Gera um serial visual incremental (Mint ID) persistido no localStorage.
+ * Formato: BETA-00001.
+ */
 export function generateMintId(): string {
   if (typeof window === 'undefined') return `BETA-00000`;
   const KEY = 'epicgg_mint_counter';
@@ -71,6 +91,12 @@ export function generateMintId(): string {
   return `BETA-${counter.toString().padStart(5, '0')}`;
 }
 
+/**
+ * Calcula o bonusRoll da instancia com base em raridade e origem da carta.
+ * - admin/legacy: sempre 0 (sem bonus aleatorio)
+ * - pack/fusion: usa tabela min-max por raridade e origem
+ * Retorna valor com 2 casas decimais.
+ */
 export function generateBonusRoll(rarity: Rarity, source: 'pack' | 'fusion' | 'admin' | 'legacy'): number {
   if (source === 'admin' || source === 'legacy') return 0;
 

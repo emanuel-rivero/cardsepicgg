@@ -20,6 +20,10 @@ const RARITY_ICON: Record<string, string> = {
   Hero: '🜲',
 };
 
+/**
+ * Tela de colecao.
+ * Consolida inventario por cardId, oferece filtros e abre detalhes no modal.
+ */
 export default function CollectionPage() {
   const { userCards, allCards } = useApp();
   const [filter, setFilter] = useState<'all' | Rarity>('all');

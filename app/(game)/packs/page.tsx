@@ -4,10 +4,15 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import styles from './packs.module.css';
 
+/**
+ * Loja de pacotes.
+ * Exibe estoque do usuario, permite compra por Epic Points e abertura via redirecionamento.
+ */
 export default function PacksPage() {
   const { allPacks, userPacks, currentUser, buyPack, addToast } = useApp();
   const router = useRouter();
 
+  /** Executa compra de pacote e publica feedback via toast. */
   const handleBuy = (packId: string) => {
     const res = buyPack(packId);
     if (!res.success) {
@@ -17,11 +22,14 @@ export default function PacksPage() {
     }
   };
 
+  /** Retorna quantidade atual de um pack no inventario do usuario. */
   const getQuantity = (packId: string): number => {
     return userPacks.find((up) => up.packId === packId)?.quantity || 0;
   };
 
-  // Navigate to home with the pack pre-selected so user sees the full opening experience
+  /**
+   * Navega para /home com query param packId para iniciar a experiencia de abertura.
+   */
   const handleOpen = (packId: string) => {
     router.push(`/home?packId=${packId}`);
   };

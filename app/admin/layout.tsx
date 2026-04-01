@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 
+/**
+ * Layout da area administrativa.
+ * Restringe acesso a usuarios admin e compartilha a Navbar do jogo.
+ */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoading } = useApp();
   const router = useRouter();

@@ -3,6 +3,17 @@
 import { mkdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 
+/**
+ * Server Action para persistir imagem enviada como Data URL em /public/uploads.
+ *
+ * Pipeline tecnico:
+ * 1) valida formato base64;
+ * 2) converte para Buffer;
+ * 3) infere extensao de arquivo;
+ * 4) cria diretorio destino se necessario;
+ * 5) grava arquivo em disco;
+ * 6) retorna URL publica relativa para renderizacao no frontend.
+ */
 export async function uploadImageServerAction(dataUrl: string, type: 'cards' | 'packs' | 'battles') {
   try {
     // 1. Validate Base64 string format

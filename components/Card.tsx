@@ -44,6 +44,10 @@ const TYPE_CLASS: Record<CardType, string> = {
   Quest: 'type-quest',
 };
 
+/**
+ * Componente visual de carta reutilizavel.
+ * Aplica tematizacao por raridade/tipo e suporta modos de tamanho, animacao e contador de quantidade.
+ */
 export default function CardComponent({
   card,
   quantity,
@@ -56,6 +60,7 @@ export default function CardComponent({
 }: CardProps) {
   const rarityLower = card.rarity.toLowerCase() as Lowercase<Rarity>;
 
+  /** Renderiza selo de raridade com regras especificas para tiers altos. */
   const renderRarityStars = (rarity: Rarity) => {
     if (rarity === 'Mythic' || rarity === 'Hero') {
       return <>{RARITY_ICON[rarity]} {rarity}</>;

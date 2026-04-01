@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import { useMemo } from 'react';
 
+/**
+ * Lobby de batalhas semanais.
+ * Exibe eventos ativos, status de participacao e entrada para a arena por eventId.
+ */
 export default function BattleLobbyPage() {
   const router = useRouter();
   const { currentUser, allBattleEvents } = useApp();
@@ -21,6 +25,9 @@ export default function BattleLobbyPage() {
 
   const activeEvents = allBattleEvents.filter(e => e.isActive);
 
+  /**
+   * Classifica dificuldade de um evento com base na quantidade de cartas ocultas.
+   */
   const difficultyLabel = (revealedCount: number, totalCards: number) => {
     const hidden = totalCards - revealedCount;
     if (hidden === 0) return { label: 'Fácil', color: '#4ade80' };

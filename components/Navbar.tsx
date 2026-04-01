@@ -14,6 +14,10 @@ const NAV_LINKS = [
   { href: '/fusion', label: '⚗ Fusion' },
 ];
 
+/**
+ * Navbar principal da area autenticada.
+ * Exibe navegacao de features, saldo do usuario e atalho de logout/admin.
+ */
 export default function Navbar() {
   const { currentUser, logout, userPacks, allPacks } = useApp();
   const pathname = usePathname();

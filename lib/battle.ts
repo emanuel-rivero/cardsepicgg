@@ -30,9 +30,19 @@ export interface BattleResult {
 }
 
 /**
- * Calculates duel-by-duel results for each slot position.
- * The returned array length = max(playerSlots.length, enemyCards.length).
- * Empty slots on either side are treated as power-0.
+ * Calcula o resultado completo de uma batalha em formato duel-by-duel.
+ *
+ * Regras tecnicas:
+ * - Cada slot do jogador enfrenta o slot correspondente do inimigo.
+ * - O numero de duelos e o maximo entre slots do jogador e deck inimigo.
+ * - Slot vazio vale poder 0.
+ * - Poder do jogador = poder por raridade + bonusRoll da instancia (quando houver).
+ * - Regras especiais de evento podem incrementar poder por tipo/raridade.
+ *
+ * Saida:
+ * - Lista de duelos com vencedor por slot.
+ * - Score agregado (wins/losses/draws, poder total).
+ * - Tier final de desempenho para feedback de UX/recompensa.
  */
 export function calculateDuelResult(
   playerSlots: (string | null)[],   // UserCard IDs (Instâncias únicas)
@@ -180,9 +190,12 @@ export const SEED_BATTLE_EVENTS: Omit<BattleEvent, 'id'>[] = [
 ];
 
 /**
- * Injects any SEED event that is missing from the current stored list.
- * Safe to call on every app boot — only adds, never removes or resets.
- * Each seed entry is matched by its zero-based index → id `event_${i+1}`.
+ * Injeta eventos seed ausentes em uma lista ja persistida.
+ *
+ * Caracteristicas:
+ * - Operacao idempotente para bootstrap/upgrade de dados.
+ * - Apenas adiciona eventos faltantes; nao remove nem sobrescreve existentes.
+ * - Mapeia seed por indice para id canonico no formato event_{n}.
  */
 export function ensureNewSeedEvents(storedEvents: BattleEvent[]): BattleEvent[] {
   const toAdd: BattleEvent[] = [];

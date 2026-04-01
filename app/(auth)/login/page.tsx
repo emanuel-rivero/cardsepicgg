@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import styles from './auth.module.css';
 
+/**
+ * Tela de autenticacao.
+ * Controla submissao local de credenciais e redireciona para /home em caso de sucesso.
+ */
 export default function LoginPage() {
   const { login } = useApp();
   const router = useRouter();
@@ -14,6 +18,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handler do formulario de login com controle de loading e erro.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

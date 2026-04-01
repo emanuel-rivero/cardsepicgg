@@ -30,6 +30,10 @@ const DEFAULT_SLOT_ANIM: SlotAnimState = {
 
 // ── Component ─────────────────────────────────────────────────────────────
 
+/**
+ * Arena de batalha por evento.
+ * Gerencia montagem de slots, simulacao de duelos e playback de animacao por rodada.
+ */
 export default function BattleEventPage() {
   const params = useParams();
   const eventId = params?.eventId as string;
@@ -121,20 +125,27 @@ export default function BattleEventPage() {
 
   // ── Drag & Drop ───────────────────────────────────────────────────────────
 
+  /** Inicia drag source com cardId e indice de origem para suporte a swap de slots. */
   const handleDragStart = (e: React.DragEvent, cardId: string, sourceSlotIndex: number = -1) => {
     e.dataTransfer.setData('cardId', cardId);
     e.dataTransfer.setData('sourceSlot', sourceSlotIndex.toString());
   };
 
+  /** Permite drop no alvo e aplica estado visual temporario de hover. */
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.currentTarget.classList.add('drag-over');
   };
 
+  /** Remove highlight visual quando item arrastado sai da area de drop. */
   const handleDragLeave = (e: React.DragEvent) => {
     e.currentTarget.classList.remove('drag-over');
   };
 
+  /**
+   * Processa drop de carta em slot de batalha.
+   * Suporta troca entre slots e auto-selecao da melhor instancia disponivel por bonusRoll.
+   */
   const handleDropSlot = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     e.currentTarget.classList.remove('drag-over');
@@ -167,6 +178,7 @@ export default function BattleEventPage() {
     });
   };
 
+  /** Remove carta de um slot quando a batalha ainda nao foi concluida/travada. */
   const handleRemoveFromSlot = (index: number) => {
     if (result || hasParticipated) return;
     setSlots(prev => { const n = [...prev]; n[index] = null; return n; });
@@ -174,15 +186,21 @@ export default function BattleEventPage() {
 
   // ── Animation engine ──────────────────────────────────────────────────────
 
+  /** Cancela todos os timeouts ativos da engine de animacao. */
   const clearAllTimeouts = useCallback(() => {
     animTimeouts.current.forEach(clearTimeout);
     animTimeouts.current = [];
   }, []);
 
+  /** Agenda callback temporal e rastreia ID para cleanup seguro. */
   const push = useCallback((fn: () => void, delay: number) => {
     animTimeouts.current.push(setTimeout(fn, delay));
   }, []);
 
+  /**
+   * Executa a animacao de um duelo individual e encadeia o proximo duelo ao final.
+   * Atualiza reveal de inimigos, score ao vivo e estado visual de vitoria/derrota por slot.
+   */
   const animateDuel = useCallback((
     duelIndex: number,
     duels: DuelOutcome[],
@@ -238,6 +256,12 @@ export default function BattleEventPage() {
     }, DUEL_DURATION);
   }, [revealedEnemySlots, push]);
 
+  /**
+   * Dispara a batalha completa:
+   * 1) calcula resultado,
+   * 2) registra participacao/recompensa,
+   * 3) inicia sequencia animada dos duelos.
+   */
   const handleFight = useCallback(() => {
     if (!eventDef || hasParticipated || animPhase !== 'idle') return;
     const filledCount = slots.filter(Boolean).length;
@@ -281,6 +305,7 @@ export default function BattleEventPage() {
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
+  /** Resolve classes visuais do slot inimigo apos duelo finalizado. */
   const getEnemySlotClass = (i: number): string => {
     const anim = enemyAnim[i];
     if (!anim?.outcome) return '';
@@ -290,6 +315,7 @@ export default function BattleEventPage() {
     return '';
   };
 
+  /** Resolve classes visuais do slot do jogador apos duelo finalizado. */
   const getPlayerSlotClass = (i: number): string => {
     const anim = playerAnim[i];
     if (!anim?.outcome) return '';
@@ -299,8 +325,10 @@ export default function BattleEventPage() {
     return '';
   };
 
+  /** Indica se slot inimigo ja foi revelado no fluxo atual. */
   const isEnemyRevealed = (i: number) => revealedEnemySlots.has(i);
 
+  /** Mapeia tier tecnico para rotulo UX final. */
   const tierLabel = (tier: BattleResult['tier']) => {
     switch (tier) {
       case 'Crushing Win': return 'Vitória Esmagadora! ⚡';
@@ -311,6 +339,7 @@ export default function BattleEventPage() {
     }
   };
 
+  /** Mapeia tier tecnico para cor de destaque da tela de resultado. */
   const tierColor = (tier: BattleResult['tier']) => {
     if (tier.includes('Win')) {
       if (tier === 'Crushing Win') return '#00d2d3';

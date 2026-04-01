@@ -13,6 +13,10 @@ interface CardModalProps {
   onClose: () => void;
 }
 
+/**
+ * Modal de detalhes da carta.
+ * Exibe estatisticas de instancia (mint, bonus, origem), lore e metadados de gameplay.
+ */
 export default function CardModal({ card, ownedQuantity, userInstances, onClose }: CardModalProps) {
   const sortedInstances = userInstances ? [...userInstances].sort((a, b) => b.bonusRoll - a.bonusRoll) : [];
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(sortedInstances.length > 0 ? sortedInstances[0].id : null);
@@ -41,6 +45,7 @@ export default function CardModal({ card, ownedQuantity, userInstances, onClose 
     };
   }, []);
 
+  /** Fecha modal ao clicar no backdrop (fora da caixa de conteudo). */
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
   };

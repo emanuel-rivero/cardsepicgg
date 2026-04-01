@@ -50,6 +50,10 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
+/**
+ * Provider central de estado da aplicacao.
+ * Orquestra autenticacao, inventario, pacotes, eventos, fusao e toasts.
+ */
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allCards, setAllCards] = useState<Card[]>([]);
@@ -60,6 +64,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  /**
+   * Enfileira toast temporario com auto-remocao.
+   * Usado como feedback padrao das operacoes da store.
+   */
   const addToast = useCallback((title: string, message: string, type: 'success' | 'info' | 'error' = 'info') => {
     const id = Math.random().toString(36).substr(2, 9);
     setToasts((prev) => [...prev, { id, title, message, type }]);
@@ -68,21 +76,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 4500);
   }, []);
 
+  /** Recarrega cartas do usuario logado a partir da camada db. */
   const refreshUserCards = useCallback(() => {
     const user = db.auth.getCurrent();
     if (user) setUserCards(db.userCards.getByUser(user.id));
   }, []);
 
+  /** Recarrega pacotes do usuario logado a partir da camada db. */
   const refreshUserPacks = useCallback(() => {
     const user = db.auth.getCurrent();
     if (user) setUserPacks(db.userPacks.getByUser(user.id));
   }, []);
 
+  /** Recarrega eventos de batalha e garante seed em bases vazias. */
   const refreshBattleEvents = useCallback(() => {
     db.battleEvents.reseedIfEmpty();
     setAllBattleEvents(db.battleEvents.getAll());
   }, []);
 
+  /**
+   * Aplica bonus de login diario (+500 Epic Points) uma vez por data ISO.
+   * Tambem dispara toast de confirmacao quando o premio for concedido.
+   */
   const checkDailyLogin = useCallback((user: User): User => {
     const today = new Date().toISOString().split('T')[0];
     if (user.lastLoginDate !== today) {
@@ -98,6 +113,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return user;
   }, [addToast]);
 
+  /**
+   * Reidrata todos os dados do app em memoria React a partir da persistencia local.
+   * Sincroniza usuario, cartas, pacotes e eventos.
+   */
   const refreshAll = useCallback(() => {
     let user = db.auth.getCurrent();
     if (user) {
@@ -124,6 +143,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshAll();
   }, [refreshAll]);
 
+  /**
+   * Realiza login local validando email/senha contra a base em localStorage.
+   * Em sucesso, estabelece sessao e popula estado dependente do usuario.
+   */
   const login = useCallback(
     (email: string, password: string): { success: boolean; error?: string } => {
       let user = db.users.getByEmail(email);
@@ -141,6 +164,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /**
+   * Cria nova conta local, concede packs iniciais e autentica automaticamente.
+   */
   const register = useCallback(
     (name: string, email: string, password: string): { success: boolean; error?: string } => {
       if (db.users.getByEmail(email)) return { success: false, error: 'Email already in use.' };
@@ -157,6 +183,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /** Finaliza sessao atual e limpa estados dependentes de usuario. */
   const logout = useCallback(() => {
     db.auth.setCurrent(null);
     setCurrentUser(null);
@@ -164,6 +191,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUserPacks([]);
   }, []);
 
+  /**
+   * Abre um pacote do inventario do usuario.
+   * Fluxo: valida sessao/pack, consome estoque, sorteia cartas, grava instancias e aplica milestones.
+   */
   const openPack = useCallback(
     (packId: string): { success: boolean; cards?: { card: Card; isNew: boolean }[]; error?: string } => {
       const user = db.auth.getCurrent();
@@ -231,6 +262,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  /**
+   * Registra participacao semanal em evento de batalha e aplica recompensa em caso de vitoria.
+   * Impede participacao repetida no mesmo evento dentro da mesma semana.
+   */
   const recordBattleResult = useCallback((eventId: string, isWin: boolean): { success: boolean; error?: string } => {
     const user = db.auth.getCurrent();
     if (!user) return { success: false, error: 'Not logged in.' };
@@ -282,6 +317,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { success: true };
   }, [addToast]);
 
+  /**
+   * Ferramenta administrativa para liberar novamente a participacao semanal do evento atual.
+   */
   const resetBattleParticipant = useCallback((eventId: string) => {
     const user = db.auth.getCurrent();
     if (!user || (!user.isAdmin && user.email !== 'admin@epicgg.com')) return;
@@ -298,6 +336,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Compra pacote com Epic Points e incrementa o inventario do usuario.
+   */
   const buyPack = useCallback((packId: string): { success: boolean; error?: string } => {
     const user = db.auth.getCurrent();
     if (!user) return { success: false, error: 'Not logged in.' };
@@ -319,6 +360,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { success: true };
   }, []);
 
+  /**
+   * Executa fusao de cartas por instancia.
+   * Valida tier e custo AFP, consome cartas, resolve chance e grava recompensa/penalidade.
+   */
   const performFusion = useCallback(
     (userCardIds: string[], sourceRarity: Rarity, afpSpent: number): { success: boolean; resultCard?: Card; error?: string; afpEarned?: number } => {
       const user = db.auth.getCurrent();

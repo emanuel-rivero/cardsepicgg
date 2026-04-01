@@ -28,6 +28,10 @@ const TYPE_GRADIENTS: Record<string, string> = {
   Quest: 'linear-gradient(160deg, #001f10, #003a20)',
 };
 
+/**
+ * Arena de fusao.
+ * Controla selecao de instancias, gasto de AFP, execucao de fusao e feedback visual do resultado.
+ */
 export default function FusionPage() {
   const { currentUser, allCards, userCards, performFusion } = useApp();
 
@@ -80,6 +84,7 @@ export default function FusionPage() {
   }, [fusionResult, allCards]);
 
   // ── Handlers ───────────────────────────────────────────────────────
+  /** Troca tier de fusao e reseta estado transiente da sessao atual. */
   const handleTierSelect = useCallback((index: number) => {
     setSelectedTierIndex(index);
     setSelectedUserCardIds([]);
@@ -89,6 +94,7 @@ export default function FusionPage() {
     setFilterRarity('All');
   }, []);
 
+  /** Adiciona instancia selecionada aos slots de fusao respeitando limite do tier. */
   const handleAddCard = useCallback((ucId: string) => {
     setSelectedUserCardIds(prev => {
       const isAlreadySelected = prev.includes(ucId);
@@ -102,6 +108,7 @@ export default function FusionPage() {
     });
   }, [tier.requiredCount]);
 
+  /** Remove carta de um slot especifico e recalcula fase da interface. */
   const handleRemoveSlot = useCallback((indexToRemove: number) => {
     setSelectedUserCardIds(prev => {
       const next = prev.filter((_, i) => i !== indexToRemove);
@@ -110,6 +117,7 @@ export default function FusionPage() {
     });
   }, []);
 
+  /** Gera particulas temporarias para reforcar sucesso/falha da fusao. */
   const spawnParticles = useCallback((success: boolean) => {
     const colors = success
       ? ['#d4af37', '#ffe680', '#b060ff', '#fff']
@@ -124,6 +132,10 @@ export default function FusionPage() {
     setTimeout(() => setParticles([]), 1600);
   }, []);
 
+  /**
+   * Executa a fusao com pequena pausa dramatica de animacao.
+   * Encaminha a chamada para performFusion da store e projeta resultado na UI.
+   */
   const handleFuse = useCallback(async () => {
     if (selectedUserCardIds.length !== tier.requiredCount) return;
     setPhase('fusing');
@@ -142,6 +154,7 @@ export default function FusionPage() {
     setPhase('result');
   }, [selectedUserCardIds, tier, afpSpend, performFusion, spawnParticles]);
 
+  /** Reinicia a sessao visual da fusao para nova tentativa. */
   const handleReset = useCallback(() => {
     setSelectedUserCardIds([]);
     setAfpSpend(0);

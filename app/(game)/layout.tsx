@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import Navbar from '@/components/Navbar';
 
+/**
+ * Layout da area de jogo.
+ * Garante autenticacao e injeta navegacao global.
+ */
 export default function GameLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoading } = useApp();
   const router = useRouter();

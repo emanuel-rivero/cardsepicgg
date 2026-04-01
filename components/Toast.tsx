@@ -3,6 +3,9 @@
 import { useApp } from '@/lib/store';
 import styles from './Toast.module.css';
 
+/**
+ * Renderiza fila de notificacoes efemeras controladas pela store global.
+ */
 export default function ToastContainer() {
   const { toasts } = useApp();
 

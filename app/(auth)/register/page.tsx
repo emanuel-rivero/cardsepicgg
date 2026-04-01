@@ -6,6 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 import styles from '../login/auth.module.css';
 
+/**
+ * Tela de cadastro de novos usuarios.
+ * Cria conta local e efetua login automatico apos sucesso.
+ */
 export default function RegisterPage() {
   const { register } = useApp();
   const router = useRouter();
@@ -15,6 +19,9 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Handler de cadastro com validacao basica no contexto da store.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');

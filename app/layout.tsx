@@ -23,6 +23,10 @@ export const metadata: Metadata = {
   keywords: ['card game', 'collectible', 'dark fantasy', 'NFT cards', 'pack opening'],
 };
 
+/**
+ * Layout raiz da aplicacao.
+ * Injeta fontes globais, metadata e o AppProvider (estado global/contexto).
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${cinzel.variable} ${inter.variable}`}>

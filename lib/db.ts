@@ -13,6 +13,10 @@ const KEYS = {
   battleEvents: 'epicgg_battle_events',
 };
 
+/**
+ * Le array serializado no localStorage para a chave informada.
+ * Retorna array vazio em SSR, ausencia de chave ou erro de parse.
+ */
 function getAll<T>(key: string): T[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -22,6 +26,10 @@ function getAll<T>(key: string): T[] {
   }
 }
 
+/**
+ * Persiste array no localStorage usando JSON.stringify.
+ * Trata estouro de cota do navegador para evitar quebra silenciosa do fluxo.
+ */
 function setAll<T>(key: string, data: T[]): void {
   if (typeof window === 'undefined') return;
   try {
@@ -34,6 +42,9 @@ function setAll<T>(key: string, data: T[]): void {
   }
 }
 
+/**
+ * Gera ID pseudo-unico combinando timestamp e sufixo aleatorio base36.
+ */
 function uid(): string {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -131,6 +142,10 @@ const INITIAL_PACKS: Pack[] = [
 // ── Public DB API ──────────────────────────────────────────────────────────
 
 export const db = {
+  /**
+   * Inicializa dados seed na primeira execucao do navegador.
+   * Nao reexecuta quando a flag "seeded" ja estiver presente.
+   */
   seed() {
     if (typeof window === 'undefined') return;
     
@@ -172,6 +187,7 @@ export const db = {
   },
 
   users: {
+    /** Busca todos os usuarios e normaliza campos numericos legados. */
     getAll: (): User[] => {
       const rawUsers = getAll<any>(KEYS.users);
       return rawUsers.map((u) => {
@@ -182,10 +198,13 @@ export const db = {
         return u as User;
       });
     },
+    /** Busca usuario por email (case-insensitive). */
     getByEmail: (email: string): User | undefined =>
       db.users.getAll().find((u) => u.email.toLowerCase() === email.toLowerCase()),
+    /** Busca usuario por ID. */
     getById: (id: string): User | undefined =>
       db.users.getAll().find((u) => u.id === id),
+    /** Cria usuario com defaults de economia e metadados. */
     create(data: Omit<User, 'id' | 'createdAt' | 'isAdmin' | 'epicPoints' | 'coins' | 'packsOpenedAllTime' | 'afp'>): User {
       const user: User = {
         epicPoints: 0,
@@ -202,6 +221,7 @@ export const db = {
       setAll(KEYS.users, users);
       return user;
     },
+    /** Atualiza parcialmente um usuario por ID. */
     update(id: string, updates: Partial<User>) {
       const users = getAll<User>(KEYS.users).map((u) =>
         u.id === id ? { ...u, ...updates } : u
@@ -211,10 +231,14 @@ export const db = {
   },
 
   cards: {
+    /** Retorna todas as cartas cadastradas. */
     getAll: (): Card[] => getAll<Card>(KEYS.cards),
+    /** Retorna somente cartas ativas para sistemas de jogo. */
     getActive: (): Card[] => getAll<Card>(KEYS.cards).filter((c) => c.isActive),
+    /** Busca carta por ID. */
     getById: (id: string): Card | undefined =>
       getAll<Card>(KEYS.cards).find((c) => c.id === id),
+    /** Cria nova carta com ID interno. */
     create(data: Omit<Card, 'id'>): Card {
       const card: Card = { ...data, id: `card_${uid()}` };
       const cards = getAll<Card>(KEYS.cards);
@@ -222,20 +246,27 @@ export const db = {
       setAll(KEYS.cards, cards);
       return card;
     },
+    /** Atualiza carta por ID. */
     update(id: string, updates: Partial<Card>) {
       const cards = getAll<Card>(KEYS.cards).map((c) =>
         c.id === id ? { ...c, ...updates } : c
       );
       setAll(KEYS.cards, cards);
     },
+    /** Remove carta por ID. */
     delete(id: string) {
       setAll(KEYS.cards, getAll<Card>(KEYS.cards).filter((c) => c.id !== id));
     },
   },
 
   userCards: {
+    /** Lista todas as instancias de carta pertencentes ao usuario. */
     getByUser: (userId: string): UserCard[] =>
       getAll<UserCard>(KEYS.userCards).filter((uc) => uc.userId === userId),
+    /**
+     * Adiciona uma instancia de carta ao inventario do usuario.
+     * Gera mintId e bonusRoll conforme raridade/origem.
+     */
     addCard(userId: string, cardId: string, foil = false, source: 'pack' | 'fusion' | 'admin' | 'legacy' = 'pack') {
       const all = getAll<UserCard>(KEYS.userCards);
       
@@ -256,7 +287,10 @@ export const db = {
       });
       setAll(KEYS.userCards, all);
     },
-    // Consume specific UserCard entries by their IDs (used in fusion)
+    /**
+     * Consome instancias especificas por ID (uso principal: fusao).
+     * Retorna false quando o usuario nao possui exatamente todas as instancias informadas.
+     */
     consumeCards(userId: string, userCardIds: string[]): boolean {
       let all = getAll<UserCard>(KEYS.userCards);
       
@@ -272,6 +306,7 @@ export const db = {
   },
 
   packs: {
+    /** Lista todos os pacotes com normalizacao de preco legado. */
     getAll: (): Pack[] => {
       const all = getAll<any>(KEYS.packs);
       return all.map(p => {
@@ -279,9 +314,12 @@ export const db = {
         return p as Pack;
       });
     },
+    /** Lista apenas pacotes ativos. */
     getActive: (): Pack[] => db.packs.getAll().filter((p) => p.isActive),
+    /** Busca pacote por ID. */
     getById: (id: string): Pack | undefined =>
       db.packs.getAll().find((p) => p.id === id),
+    /** Cria pacote com preco padrao inicial. */
     create(data: Omit<Pack, 'id' | 'priceEpicPoints'>): Pack {
       const pack: Pack = { ...data, id: `pack_${uid()}`, priceEpicPoints: 1000 };
       const packs = getAll<Pack>(KEYS.packs);
@@ -289,24 +327,29 @@ export const db = {
       setAll(KEYS.packs, packs);
       return pack;
     },
+    /** Atualiza pacote por ID. */
     update(id: string, updates: Partial<Pack>) {
       const packs = getAll<Pack>(KEYS.packs).map((p) =>
         p.id === id ? { ...p, ...updates } : p
       );
       setAll(KEYS.packs, packs);
     },
+    /** Exclui pacote por ID. */
     delete(id: string) {
       setAll(KEYS.packs, getAll<Pack>(KEYS.packs).filter((p) => p.id !== id));
     },
   },
 
   userPacks: {
+    /** Lista inventario de pacotes do usuario. */
     getByUser: (userId: string): UserPack[] =>
       getAll<UserPack>(KEYS.userPacks).filter((up) => up.userId === userId),
+    /** Busca um pacote especifico no inventario do usuario. */
     get: (userId: string, packId: string): UserPack | undefined =>
       getAll<UserPack>(KEYS.userPacks).find(
         (up) => up.userId === userId && up.packId === packId
       ),
+    /** Atribui quantidade de pacote ao usuario (incremental). */
     assign(userId: string, packId: string, quantity = 1) {
       const all = getAll<UserPack>(KEYS.userPacks);
       const existing = all.find((up) => up.userId === userId && up.packId === packId);
@@ -322,6 +365,7 @@ export const db = {
         setAll(KEYS.userPacks, all);
       }
     },
+    /** Consome 1 unidade de pacote do inventario do usuario. */
     consume(userId: string, packId: string): boolean {
       const all = getAll<UserPack>(KEYS.userPacks);
       const existing = all.find((up) => up.userId === userId && up.packId === packId);
@@ -337,10 +381,14 @@ export const db = {
   },
 
   battleEvents: {
+    /** Lista todos os eventos de batalha. */
     getAll: (): BattleEvent[] => getAll<BattleEvent>(KEYS.battleEvents),
+    /** Lista somente eventos ativos. */
     getActive: (): BattleEvent[] => getAll<BattleEvent>(KEYS.battleEvents).filter(e => e.isActive),
+    /** Busca evento por ID. */
     getById: (id: string): BattleEvent | undefined =>
       getAll<BattleEvent>(KEYS.battleEvents).find(e => e.id === id),
+    /** Cria evento com ID interno. */
     create(data: Omit<BattleEvent, 'id'>): BattleEvent {
       const event: BattleEvent = { ...data, id: `event_${uid()}` };
       const events = getAll<BattleEvent>(KEYS.battleEvents);
@@ -348,12 +396,14 @@ export const db = {
       setAll(KEYS.battleEvents, events);
       return event;
     },
+    /** Atualiza evento por ID. */
     update(id: string, updates: Partial<BattleEvent>) {
       const events = getAll<BattleEvent>(KEYS.battleEvents).map(e =>
         e.id === id ? { ...e, ...updates } : e
       );
       setAll(KEYS.battleEvents, events);
     },
+    /** Exclui evento por ID. */
     delete(id: string) {
       setAll(KEYS.battleEvents, getAll<BattleEvent>(KEYS.battleEvents).filter(e => e.id !== id));
     },
@@ -380,12 +430,14 @@ export const db = {
   },
 
   auth: {
+    /** Recupera usuario logado atualmente a partir da chave de sessao local. */
     getCurrent(): User | null {
       if (typeof window === 'undefined') return null;
       const id = localStorage.getItem(KEYS.currentUser);
       if (!id) return null;
       return getAll<User>(KEYS.users).find((u) => u.id === id) || null;
     },
+    /** Define/remove sessao local com base no userId informado. */
     setCurrent(userId: string | null) {
       if (typeof window === 'undefined') return;
       if (userId) {

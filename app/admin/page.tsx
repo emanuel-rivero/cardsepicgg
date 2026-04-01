@@ -43,6 +43,10 @@ const EMPTY_BATTLE_EVENT: Omit<BattleEvent, 'id'> = {
   isActive: true,
 };
 
+/**
+ * Painel administrativo com CRUD de cartas, pacotes, usuarios e eventos de batalha.
+ * Tambem centraliza uploads e rotinas de migracao local.
+ */
 export default function AdminPage() {
   const { currentUser, refreshAll, refreshBattleEvents } = useApp();
   const router = useRouter();
@@ -76,6 +80,7 @@ export default function AdminPage() {
   const [assignQty, setAssignQty] = useState(1);
   const [assignMsg, setAssignMsg] = useState('');
 
+  /** Recarrega datasets do admin a partir da camada db. */
   const refresh = useCallback(() => {
     setCards(db.cards.getAll());
     setPacks(db.packs.getAll());
@@ -96,6 +101,7 @@ export default function AdminPage() {
 
   // ── Card handlers ──────────────────────────────────────────────────────
 
+  /** Submete criacao/edicao de carta e sincroniza store global. */
   const handleCardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cardToSave = {
@@ -117,6 +123,7 @@ export default function AdminPage() {
     setTimeout(() => setCardMsg(''), 3000);
   };
 
+  /** Preenche formulario com dados da carta selecionada para edicao. */
   const handleCardEdit = (card: Card) => {
     setCardForm({
       name: card.name, subtitle: card.subtitle, rarity: card.rarity,
@@ -128,6 +135,7 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  /** Remove carta com confirmacao de seguranca. */
   const handleCardDelete = (id: string) => {
     if (confirm('Delete this card?')) {
       db.cards.delete(id);
@@ -135,6 +143,9 @@ export default function AdminPage() {
     }
   };
 
+  /**
+   * Comprime imagem no cliente antes do upload para reduzir payload e consumo de storage.
+   */
   const compressImage = (file: File, callback: (base64: string) => void) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -164,6 +175,7 @@ export default function AdminPage() {
     reader.readAsDataURL(file);
   };
 
+  /** Upload de imagem de carta e vinculacao da URL retornada ao formulario. */
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -180,6 +192,7 @@ export default function AdminPage() {
     });
   };
 
+  /** Upload de imagem de pacote e vinculacao da URL retornada ao formulario. */
   const handlePackImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -198,6 +211,7 @@ export default function AdminPage() {
 
   // ── Pack handlers ──────────────────────────────────────────────────────
 
+  /** Submete criacao/edicao de pacote e sincroniza store global. */
   const handlePackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingPackId) {
@@ -216,6 +230,7 @@ export default function AdminPage() {
 
   // ── Assign handler ─────────────────────────────────────────────────────
 
+  /** Atribui pacotes a usuario selecionado no painel administrativo. */
   const handleAssign = (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignUserId || !assignPackId) return;
@@ -226,6 +241,7 @@ export default function AdminPage() {
 
   // ── Battle Event handlers ──────────────────────────────────────────────
 
+  /** Submete criacao/edicao de evento de batalha. */
   const handleBattleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingBattleId) {
@@ -242,6 +258,7 @@ export default function AdminPage() {
     setTimeout(() => setBattleMsg(''), 3000);
   };
 
+  /** Carrega evento no formulario para edicao. */
   const handleBattleEdit = (ev: BattleEvent) => {
     setBattleForm({
       name: ev.name, image: ev.image, lore: ev.lore,

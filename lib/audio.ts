@@ -1,5 +1,9 @@
 // Web Audio API synthesis — no external files needed
 
+/**
+ * Recupera/cria um AudioContext reutilizavel e garante estado "running".
+ * Usa vendor prefix webkitAudioContext quando necessario.
+ */
 function getCtx(ref: React.MutableRefObject<AudioContext | null>): AudioContext | null {
   if (typeof window === 'undefined') return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -96,7 +100,10 @@ export function playHornOfGondor(ref: React.MutableRefObject<AudioContext | null
   });
 }
 
-/** Plays the custom pack opening music from /audio/pack_open.mp3 with fallback to synthesized epic open. */
+/**
+ * Toca audio de abertura de pack a partir de arquivo estatico.
+ * Em caso de falha (arquivo ausente, bloqueio de autoplay, etc.), aplica fallback para sintese via playEpicOpen.
+ */
 export function playPackOpeningMusic(ref: React.MutableRefObject<AudioContext | null>) {
   const audio = new Audio('/audio/pack_open.mp3');
   audio.volume = 0.6;

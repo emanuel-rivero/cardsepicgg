@@ -4,6 +4,10 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
 
+/**
+ * Entry point da aplicacao.
+ * Redireciona automaticamente para a area autenticada (/home) ou publica (/login).
+ */
 export default function RootPage() {
   const { currentUser, isLoading } = useApp();
   const router = useRouter();

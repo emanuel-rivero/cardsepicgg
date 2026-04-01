@@ -9,6 +9,10 @@ export type FusionTier = {
   afpReward: number; // AFP earned on success
 };
 
+/**
+ * Tabela de progressao de fusao entre raridades.
+ * Define origem, destino, quantidade de cartas exigidas, chance base e recompensa AFP.
+ */
 export const FUSION_TIERS: FusionTier[] = [
   {
     sourceRarity: 'Common',
@@ -68,19 +72,31 @@ export const AFP_FAILURE_REWARD = 5;
 export const AFP_PER_CHANCE = 0.02; // +2% per AFP
 export const AFP_MAX_CHANCE = 0.95; // 95% cap
 
-/** Calculate the final success chance after AFP spending */
+/**
+ * Calcula a chance final de sucesso da fusao apos investimento de AFP.
+ * Regras:
+ * - tiers garantidos (baseChance >= 1.0) mantem 100%;
+ * - bonus de chance = afpSpent * AFP_PER_CHANCE;
+ * - limite superior em AFP_MAX_CHANCE.
+ */
 export function calcFinalChance(baseChance: number, afpSpent: number): number {
   if (baseChance >= 1.0) return 1.0;
   const bonus = afpSpent * AFP_PER_CHANCE;
   return Math.min(AFP_MAX_CHANCE, baseChance + bonus);
 }
 
-/** Roll the fusion — returns true for success */
+/**
+ * Executa o sorteio probabilistico de sucesso da fusao.
+ * Retorna true quando Math.random() < finalChance.
+ */
 export function rollFusion(finalChance: number): boolean {
   return Math.random() < finalChance;
 }
 
-/** Pick a random active card of the target rarity from the global card pool */
+/**
+ * Seleciona aleatoriamente uma carta ativa da raridade alvo.
+ * Retorna null quando nao ha cartas cadastradas para a raridade solicitada.
+ */
 export function getRandomCardByRarity(allCards: Card[], rarity: Rarity): Card | null {
   const pool = allCards.filter((c) => c.isActive && c.rarity === rarity);
   if (pool.length === 0) return null;
