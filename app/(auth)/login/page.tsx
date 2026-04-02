@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/store';
@@ -15,8 +15,20 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Load remembered credentials on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    const savedPassword = localStorage.getItem('remembered_password');
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
 
   /**
    * Handler do formulario de login com controle de loading e erro.
@@ -28,6 +40,13 @@ export default function LoginPage() {
     const result = login(email.trim(), password);
     setLoading(false);
     if (result.success) {
+      if (rememberMe) {
+        localStorage.setItem('remembered_email', email.trim());
+        localStorage.setItem('remembered_password', password);
+      } else {
+        localStorage.removeItem('remembered_email');
+        localStorage.removeItem('remembered_password');
+      }
       router.push('/home');
     } else {
       setError(result.error || 'Login failed.');
@@ -80,6 +99,30 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
             />
+          </div>
+
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              marginBottom: '1rem',
+              cursor: 'pointer',
+              userSelect: 'none',
+              fontSize: '0.875rem'
+            }}
+            onClick={() => setRememberMe(!rememberMe)}
+          >
+            <input
+              type="checkbox"
+              id="remember-me"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+            <label htmlFor="remember-me" style={{ cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              Remember me
+            </label>
           </div>
 
           {error && <p className={styles.error}>{error}</p>}
