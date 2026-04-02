@@ -22,6 +22,12 @@ export interface User {
   hasClaimed10PacksBonus?: boolean;
   lastBattleParticipatedDate?: string;
   battleHistory?: string[];
+  // Pity timer counters — incremented per pack opening without that rarity
+  pity_starter_rare?: number;
+  pity_epic_epic?: number;
+  pity_epic_legendary?: number;
+  pity_mythic_legendary?: number;
+  pity_mythic_mythic?: number;
 }
 
 export interface Card {

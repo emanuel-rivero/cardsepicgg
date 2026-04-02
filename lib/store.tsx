@@ -11,6 +11,12 @@ import React, {
 import { User, Card, UserCard, Pack, UserPack, ToastMessage, Rarity, BattleEvent } from './types';
 import { db } from './db';
 import { rollCards, detectPackTier } from './cardGenerator';
+import {
+  extractPityData,
+  getTriggeredPities,
+  calculateUpdatedPityCounters,
+  forcePityCard,
+} from './pity';
 import ToastContainer from '@/components/Toast';
 import { calcFinalChance, rollFusion, getRandomCardByRarity, FUSION_BY_SOURCE, AFP_FAILURE_REWARD } from './fusion';
 
@@ -208,23 +214,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Determina tier e sorteia cartas conforme distribuicao do pack
       const packTier = detectPackTier(pack.name);
-      const cards: Card[] = rollCards(db.cards.getActive(), pack.cardsPerPack, packTier);
+
+      // ── Pity Timer: verificar contadores antes de gerar cartas ──
+      const currentUserData = db.users.getById(user.id);
+      const pityData = extractPityData((currentUserData || {}) as Record<string, unknown>);
+      const triggeredPities = getTriggeredPities(pityData, packTier);
+
+      // Gera cartas normalmente
+      const activeCards = db.cards.getActive();
+      let cards: Card[] = rollCards(activeCards, pack.cardsPerPack, packTier);
+
+      // Aplica pity: para cada raridade garantida, substitui o card de menor raridade
+      // que nao atenda ao criterio por uma carta forcada daquela raridade.
+      for (const pityRarity of triggeredPities) {
+        // Verifica se o roll normal ja entregou essa raridade (ou superior)
+        const alreadySatisfied = cards.some(c => {
+          const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Hero'];
+          return RARITY_ORDER.indexOf(c.rarity) >= RARITY_ORDER.indexOf(pityRarity);
+        });
+
+        if (!alreadySatisfied) {
+          const pityCard = forcePityCard(activeCards, pityRarity);
+          if (pityCard) {
+            // Substitui o card de menor raridade no pack
+            const lowestIdx = cards.reduce((minIdx, c, i, arr) => {
+              const RARITY_ORDER = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Hero'];
+              return RARITY_ORDER.indexOf(c.rarity) < RARITY_ORDER.indexOf(arr[minIdx].rarity) ? i : minIdx;
+            }, 0);
+            cards[lowestIdx] = pityCard;
+          }
+        }
+      }
 
       const existingCards = db.userCards.getByUser(user.id);
       const existingCardIds = new Set(existingCards.map(uc => uc.cardId));
 
       const cardsWithNewFlag = cards.map(c => {
         const isNew = !existingCardIds.has(c.id);
-        if (isNew) {
-          existingCardIds.add(c.id);
-        }
+        if (isNew) existingCardIds.add(c.id);
         return { card: c, isNew };
       });
 
       // Save to user collection
       cards.forEach((card) => db.userCards.addCard(user.id, card.id));
 
-      const currentUserData = db.users.getById(user.id);
+      // ── Milestone + Pity counter update ──
       if (currentUserData) {
         let newPacksOpened = currentUserData.packsOpenedAllTime + 1;
         let newPoints = currentUserData.epicPoints;
@@ -241,12 +275,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           p10 = true;
           addToast('Conquista', 'Você abriu 10 pacotes e ganhou +2000 Epic! Points!', 'success');
         }
+
+        // Calcula atualizacao dos contadores de pity com base nas cartas obtidas
+        const pityUpdates = calculateUpdatedPityCounters(pityData, packTier, cards);
         
         db.users.update(user.id, {
           packsOpenedAllTime: newPacksOpened,
           epicPoints: newPoints,
           hasClaimed5PacksBonus: p5,
-          hasClaimed10PacksBonus: p10
+          hasClaimed10PacksBonus: p10,
+          ...pityUpdates,
         });
       }
 
@@ -257,7 +295,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       return { success: true, cards: cardsWithNewFlag };
     },
-    []
+    [addToast]
   );
 
   /**
