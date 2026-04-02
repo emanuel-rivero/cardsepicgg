@@ -6,7 +6,7 @@ import { useApp } from '@/lib/store';
 
 /**
  * Entry point da aplicacao.
- * Redireciona automaticamente para a area autenticada (/home) ou publica (/login).
+ * Redireciona automaticamente para a area autenticada (/packs) ou publica (/login).
  */
 export default function RootPage() {
   const { currentUser, isLoading } = useApp();
@@ -15,7 +15,7 @@ export default function RootPage() {
   useEffect(() => {
     if (!isLoading) {
       if (currentUser) {
-        router.replace('/home');
+        router.replace('/packs');
       } else {
         router.replace('/login');
       }

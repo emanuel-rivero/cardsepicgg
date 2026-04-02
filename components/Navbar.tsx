@@ -7,9 +7,8 @@ import { useApp } from '@/lib/store';
 import styles from './Navbar.module.css';
 
 const NAV_LINKS = [
-  { href: '/home', label: 'Open Pack' },
+  { href: '/packs', label: 'Card Packs' },
   { href: '/collection', label: 'Collection' },
-  { href: '/packs', label: 'Packs' },
   { href: '/battle', label: 'Battle' },
   { href: '/fusion', label: '⚗ Fusion' },
 ];
@@ -28,7 +27,7 @@ export default function Navbar() {
     <nav className={styles.nav}>
       <div className={styles.inner}>
         {/* Logo */}
-        <Link href="/home" className={styles.logo}>
+        <Link href="/packs" className={styles.logo}>
           <span className={styles.logoIcon}>⚔</span>
           <span className={styles.logoText}>
             Cards<span className={styles.logoAccent}>Epic</span>.gg
@@ -44,9 +43,6 @@ export default function Navbar() {
                 className={`${styles.link} ${pathname === link.href ? styles.active : ''}`}
               >
                 {link.label}
-                {link.href === '/home' && totalPacks > 0 && (
-                  <span className={styles.badge}>{totalPacks}</span>
-                )}
               </Link>
             </li>
           ))}

@@ -378,11 +378,11 @@ export default function BattleEventPage() {
           {/* Live scoreboard */}
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', fontFamily: 'Cinzel, serif', fontSize: '0.9rem' }}>
             <span style={{ color: '#4a9eff' }}>
-              Você: <strong style={{ fontSize: '1.1rem' }}>{animPhase !== 'idle' ? livePlayerPower : totalPower}</strong>
+              Você: <strong style={{ fontSize: '1.1rem' }}>{(animPhase !== 'idle' ? livePlayerPower : totalPower).toFixed(2)}</strong>
             </span>
             <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '1.4rem' }}>VS</span>
             <span style={{ color: '#ff4757' }}>
-              Inimigo: <strong style={{ fontSize: '1.1rem' }}>{liveEnemyPower}</strong>
+              Inimigo: <strong style={{ fontSize: '1.1rem' }}>{liveEnemyPower.toFixed(2)}</strong>
             </span>
           </div>
 
@@ -554,7 +554,7 @@ export default function BattleEventPage() {
                     {/* Floating power number */}
                     {anim?.showFloat && enemyCardId && (
                       <div className={styles.floatingNumber} style={{ color: '#ff4757' }}>
-                        {anim.outcome ? `${anim.outcome.enemyPower}` : '?'}
+                        {anim.outcome ? `${anim.outcome.enemyPower.toFixed(2)}` : '?'}
                       </div>
                     )}
 
@@ -603,7 +603,7 @@ export default function BattleEventPage() {
                   {tierLabel(result.tier)}
                 </div>
                 <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                  <span>Poder: <strong style={{ color: 'var(--text-primary)' }}>{result.totalPlayerPower}</strong></span>
+                  <span>Poder: <strong style={{ color: 'var(--text-primary)' }}>{result.totalPlayerPower.toFixed(2)}</strong></span>
                   <span>Duelos: <strong style={{ color: 'var(--text-primary)' }}>{result.playerWins}/{result.duels.length}</strong></span>
                 </div>
                 {result.isWin && (
@@ -673,7 +673,7 @@ export default function BattleEventPage() {
                     {/* Floating power number */}
                     {anim?.showFloat && slotUcId && (
                       <div className={styles.floatingNumber} style={{ color: '#4a9eff' }}>
-                        {anim.outcome ? `${anim.outcome.playerPower}` : '?'}
+                        {anim.outcome ? `${anim.outcome.playerPower.toFixed(2)}` : '?'}
                       </div>
                     )}
 
