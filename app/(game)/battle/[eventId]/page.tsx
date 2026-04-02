@@ -6,6 +6,7 @@ import { useApp } from '@/lib/store';
 import { calculateDuelResult, BattleResult, RARITY_POWER } from '@/lib/battle';
 import { DuelOutcome } from '@/lib/types';
 import Card from '@/components/Card';
+import CardModal from '@/components/CardModal';
 import styles from '../battle.module.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -64,6 +65,10 @@ export default function BattleEventPage() {
   const [liveEnemyPower, setLiveEnemyPower] = useState(0);
   const [livePlayerWins, setLivePlayerWins] = useState(0);
   const [liveEnemyWins, setLiveEnemyWins] = useState(0);
+
+  // Card Modal State
+  const [selectedModalCardId, setSelectedModalCardId] = useState<string | null>(null);
+  const [selectedModalUserCardId, setSelectedModalUserCardId] = useState<string | null>(null);
 
   const animTimeouts = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -687,19 +692,20 @@ export default function BattleEventPage() {
                         className={`${anim?.flashed ? styles.impactFlash : ''} ${getPlayerSlotClass(i)}`}
                         draggable={!isLocked}
                         onDragStart={(e) => handleDragStart(e, cardData.id, i)}
-                        onClick={() => handleRemoveFromSlot(i)}
-                        style={{ width: '100%', height: '100%', cursor: isLocked ? 'default' : 'grab', position: 'relative', borderRadius: '10px', overflow: 'hidden' }}
+                        onClick={() => {
+                          setSelectedModalCardId(cardData.id);
+                          if (userInstance) setSelectedModalUserCardId(userInstance.id);
+                        }}
+                        style={{ width: '100%', height: '100%', cursor: isLocked ? 'default' : 'zoom-in', position: 'relative', borderRadius: '10px', overflow: 'hidden' }}
                       >
                         <div style={{ position: 'absolute', inset: 0, transform: 'scale(0.95)', transformOrigin: 'top left', width: '105.3%', height: '105.3%' }}>
                           <Card card={cardData} size="sm" animateIn={false} />
                         </div>
-                        {userInstance && userInstance.bonusRoll > 0 && (
-                          <div style={{ position: 'absolute', bottom: -5, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,210,211,0.9)', color: '#fff', fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 'bold', zIndex: 11, border: '1px solid #fff' }}>
-                            +{userInstance.bonusRoll.toFixed(2)}
-                          </div>
-                        )}
                         {!isLocked && (
-                          <div style={{ position: 'absolute', top: -8, right: -8, background: 'var(--error)', width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
+                          <div 
+                            onClick={(e) => { e.stopPropagation(); handleRemoveFromSlot(i); }}
+                            style={{ position: 'absolute', top: -8, right: -8, background: 'var(--error)', width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', zIndex: 10, boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}
+                          >
                             ✖
                           </div>
                         )}
@@ -741,13 +747,20 @@ export default function BattleEventPage() {
               const usedInstances = new Set(slots.filter(Boolean));
               const availableCount = ownedInstances.filter(uc => !usedInstances.has(uc.id)).length;
 
+              const bestInstance = ownedInstances
+                .filter(uc => !usedInstances.has(uc.id))
+                .sort((a, b) => b.bonusRoll - a.bonusRoll)[0] || ownedInstances.sort((a,b) => b.bonusRoll - a.bonusRoll)[0];
+              
+              const realPower = RARITY_POWER[c.rarity] + (bestInstance?.bonusRoll || 0);
+
               return (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', opacity: availableCount > 0 ? 1 : 0.4, padding: '0.6rem 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div
-                    draggable={availableCount > 0 && !isLocked}
-                    onDragStart={(e) => handleDragStart(e, c.id)}
-                    style={{ width: '70px', height: '105px', flexShrink: 0, position: 'relative', cursor: availableCount > 0 && !isLocked ? 'grab' : 'default' }}
-                  >
+                    <div
+                      draggable={availableCount > 0 && !isLocked}
+                      onDragStart={(e) => handleDragStart(e, c.id)}
+                      onClick={() => setSelectedModalCardId(c.id)}
+                      style={{ width: '70px', height: '105px', flexShrink: 0, position: 'relative', cursor: availableCount > 0 && !isLocked ? 'grab' : 'pointer' }}
+                    >
                     <div style={{ position: 'absolute', top: 0, left: 0, width: '120px', height: '170px', transform: 'scale(0.583)', transformOrigin: 'top left' }}>
                       <Card card={c} size="sm" animateIn={false} />
                     </div>
@@ -756,7 +769,7 @@ export default function BattleEventPage() {
                     <div style={{ fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }} title={c.name}>{c.name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{c.rarity} · {c.type}</div>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                      Poder: <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>{RARITY_POWER[c.rarity]}</span>
+                      Poder: <span style={{ color: '#00d2d3', fontWeight: 'bold' }}>{realPower.toFixed(2)}</span>
                     </div>
                     <div style={{ fontSize: '0.85rem', color: availableCount > 0 ? 'var(--gold)' : 'var(--error)', marginTop: '0.3rem', fontWeight: 'bold' }}>
                       {availableCount}/{ownedCount} disponíveis
@@ -780,6 +793,30 @@ export default function BattleEventPage() {
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
         @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
       `}</style>
+
+      {/* Card Detail Modal */}
+      {selectedModalCardId && (() => {
+        const card = allCards.find(c => c.id === selectedModalCardId);
+        if (!card) return null;
+        
+        const ownedInstances = userCards.filter(uc => uc.cardId === card.id);
+        const ownedQuantity = ownedInstances.length;
+        const selectedInstances = selectedModalUserCardId 
+          ? userCards.filter(uc => uc.id === selectedModalUserCardId)
+          : ownedInstances;
+        
+        return (
+          <CardModal
+            card={card}
+            ownedQuantity={ownedQuantity}
+            userInstances={selectedInstances}
+            onClose={() => {
+              setSelectedModalCardId(null);
+              setSelectedModalUserCardId(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
