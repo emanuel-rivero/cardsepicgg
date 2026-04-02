@@ -114,6 +114,88 @@ export function playPackOpeningMusic(ref: React.MutableRefObject<AudioContext | 
   });
 }
 
+/**
+ * Perfect Roll Fanfare — Lucky Pack Moment.
+ * Composicao sintetizada em tres atos:
+ * 1) Impacto percussivo grave (golpe de destino)
+ * 2) Arpejo ascendente dourado (harpa celestial)
+ * 3) Acorde sustentado de coro (triado maior luminoso)
+ */
+export function playPerfectRollFanfare(ref: React.MutableRefObject<AudioContext | null>) {
+  const ctx = getCtx(ref);
+  if (!ctx) return;
+  const t = ctx.currentTime;
+
+  // ── ACT 1: Thunderous impact ──
+  const bufLen = Math.floor(ctx.sampleRate * 0.8);
+  const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufLen, 1.8);
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buf;
+  const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 80;
+  const ng = ctx.createGain();
+  ng.gain.setValueAtTime(1.4, t);
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+  noise.connect(nf); nf.connect(ng); ng.connect(ctx.destination);
+  noise.start(t);
+
+  // Sub-bass boom
+  const sub = ctx.createOscillator(); sub.type = 'sine'; sub.frequency.value = 40;
+  const subG = ctx.createGain();
+  subG.gain.setValueAtTime(0.5, t);
+  subG.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+  sub.connect(subG); subG.connect(ctx.destination);
+  sub.start(t); sub.stop(t + 1);
+
+  // ── ACT 2: Golden harp arpeggio (ascending) ──
+  // C major pentatonic: C4 E4 G4 C5 E5 G5 C6
+  const harpNotes = [261.63, 329.63, 392.0, 523.25, 659.25, 783.99, 1046.5];
+  harpNotes.forEach((freq, i) => {
+    const osc = ctx.createOscillator(); osc.type = 'sine';
+    const gain = ctx.createGain();
+    const delay = 0.35 + i * 0.11;
+    gain.gain.setValueAtTime(0, t + delay);
+    gain.gain.linearRampToValueAtTime(0.12, t + delay + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + delay + 0.9);
+    osc.frequency.setValueAtTime(freq, t + delay);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t + delay); osc.stop(t + delay + 1);
+  });
+
+  // ── ACT 3: Triumphant choir swell ──
+  const choirFreqs = [130.81, 164.81, 196.0, 261.63, 329.63, 392.0, 523.25];
+  choirFreqs.forEach((freq, i) => {
+    const osc = ctx.createOscillator(); osc.type = 'sine';
+    // Add slight detune for warmth
+    osc.detune.value = (i % 2 === 0 ? 1 : -1) * 4;
+    const gain = ctx.createGain();
+    const start = 1.1 + i * 0.05;
+    gain.gain.setValueAtTime(0, t + start);
+    gain.gain.linearRampToValueAtTime(0.04, t + start + 0.3);
+    gain.gain.setValueAtTime(0.04, t + 3.5);
+    gain.gain.linearRampToValueAtTime(0, t + 4.5);
+    osc.frequency.setValueAtTime(freq, t + start);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t + start); osc.stop(t + 4.8);
+  });
+
+  // Shimmer high bells (overtones)
+  [2093, 2637.02, 3135.96].forEach((freq, i) => {
+    const osc = ctx.createOscillator(); osc.type = 'sine';
+    const gain = ctx.createGain();
+    const start = 1.0 + i * 0.18;
+    gain.gain.setValueAtTime(0, t + start);
+    gain.gain.linearRampToValueAtTime(0.02, t + start + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + start + 2.5);
+    osc.frequency.setValueAtTime(freq, t + start);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t + start); osc.stop(t + start + 2.8);
+  });
+}
+
 // Required for JSX in this file context (just for linting)
 import React from 'react';
 void React;

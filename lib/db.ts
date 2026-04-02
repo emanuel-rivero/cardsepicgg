@@ -267,7 +267,7 @@ export const db = {
       return cards.map(uc => {
         if (!uc.rollQuality) {
           const cardDef = db.cards.getById(uc.cardId);
-          const { rollQuality, rollQualityPercent } = getRollQuality(uc.bonusRoll, cardDef?.rarity || 'Common');
+          const { rollQuality, rollQualityPercent } = getRollQuality(uc.bonusRoll, cardDef?.rarity || 'Common', uc.source);
           return { ...uc, rollQuality, rollQualityPercent };
         }
         return uc;
@@ -283,7 +283,7 @@ export const db = {
       const cardDef = db.cards.getById(cardId);
       const rarity = cardDef ? cardDef.rarity : 'Common';
       const bonusRoll = generateBonusRoll(rarity, source);
-      const { rollQuality, rollQualityPercent } = getRollQuality(bonusRoll, rarity);
+      const { rollQuality, rollQualityPercent } = getRollQuality(bonusRoll, rarity, source);
       const mintId = generateMintId();
 
       all.push({

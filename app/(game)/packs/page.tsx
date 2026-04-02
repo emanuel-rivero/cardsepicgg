@@ -75,22 +75,21 @@ export default function PacksPage() {
                 <div className={styles.packInfo}>
                   <h2 className={styles.packName}>{pack.name}</h2>
                   <p className={styles.packDesc}>{pack.description}</p>
-                  
+
                   <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      Price: <strong style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.2rem'}}>⚪ {pack.priceEpicPoints ?? 1000}</strong>
+                      Price: <strong style={{ color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>⚪ {pack.priceEpicPoints ?? 1000}</strong>
                     </div>
                     {currentUser ? (
-                      <button 
-                         className="btn btn-outline" 
-                         disabled={(currentUser.epicPoints || 0) < (pack.priceEpicPoints ?? 1000)}
-                         onClick={() => handleBuy(pack.id)}
-                         style={{ 
-                            padding: '0.4rem 1rem', 
-                            fontSize: '0.85rem', 
-                            width: 'fit-content',
-                            opacity: (currentUser.epicPoints || 0) < (pack.priceEpicPoints ?? 1000) ? 0.5 : 1
-                         }}
+                      <button
+                        className="btn btn-outline"
+                        disabled={(currentUser.epicPoints || 0) < (pack.priceEpicPoints ?? 1000)}
+                        onClick={() => handleBuy(pack.id)}
+                        style={{
+                          padding: '0.4rem 1rem',
+                          fontSize: '0.85rem',
+                          width: 'fit-content',
+                        }}
                       >
                         Buy Pack
                       </button>

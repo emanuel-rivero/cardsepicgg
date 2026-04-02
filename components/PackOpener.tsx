@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApp } from '@/lib/store';
-import { playPackOpeningMusic, playHornOfGondor } from '@/lib/audio';
+import { playPackOpeningMusic, playHornOfGondor, playPerfectRollFanfare } from '@/lib/audio';
+import CardModal from '@/components/CardModal';
 
 // Phases: idle → shaking → tearing → burst → revealing → done
 type Phase = 'idle' | 'shaking' | 'tearing' | 'burst' | 'revealing' | 'done';
@@ -27,7 +28,7 @@ const TEAR_BOTTOM = `polygon(
  * Controla fases de animacao, efeitos sonoros, sorteio de cartas e revelacao progressiva.
  */
 export default function PackOpener() {
-  const { userPacks, allPacks, openPack } = useApp();
+  const { userPacks, allPacks, openPack, userCards, allCards } = useApp();
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlPackId = searchParams.get('packId');
@@ -39,6 +40,9 @@ export default function PackOpener() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [modalCardId, setModalCardId] = useState<string | null>(null);
+  const [luckyMoment, setLuckyMoment] = useState<{ card: { id: string; name: string; image?: string; rarity: string } } | null>(null);
+  const luckyDismissRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Pick the pack from URL param, or fall back to first available
@@ -60,15 +64,44 @@ export default function PackOpener() {
   const push = (t: ReturnType<typeof setTimeout>) => timerRefs.current.push(t);
 
   /**
-   * Faz flip da carta revelada e toca efeito especial quando a carta e nova.
+   * Faz flip da carta revelada na primeira interacao.
+   * Nas interacoes seguintes (carta ja virada), abre o CardModal de detalhes.
+   * Se a carta for Perfect Roll, aciona o Lucky Pack Moment.
    */
-  const handleCardClick = (index: number, isNew: boolean) => {
+  const handleCardClick = (index: number, isNew: boolean, cardId: string) => {
     if (!flippedCards[index]) {
       setFlippedCards((prev) => ({ ...prev, [index]: true }));
-      if (isNew) {
+
+      // Check if this is a Perfect Roll — Lucky Pack Moment!
+      const instances = userCards.filter(uc => uc.cardId === cardId);
+      const freshInstance = instances.sort((a, b) =>
+        new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime()
+      )[0];
+
+      if (freshInstance?.rollQuality === 'Perfect Roll') {
+        // Small delay so the card flip starts first
+        setTimeout(() => {
+          const cardDef = allCards.find(c => c.id === cardId);
+          if (cardDef) {
+            playPerfectRollFanfare(audioCtxRef);
+            setLuckyMoment({ card: cardDef });
+            // Auto-dismiss after 6s
+            if (luckyDismissRef.current) clearTimeout(luckyDismissRef.current);
+            luckyDismissRef.current = setTimeout(() => setLuckyMoment(null), 6000);
+          }
+        }, 400);
+      } else if (isNew) {
         playHornOfGondor(audioCtxRef);
       }
+    } else {
+      // Card already flipped — open detail modal
+      setModalCardId(cardId);
     }
+  };
+
+  const dismissLuckyMoment = () => {
+    if (luckyDismissRef.current) clearTimeout(luckyDismissRef.current);
+    setLuckyMoment(null);
   };
 
   /**
@@ -504,7 +537,7 @@ export default function PackOpener() {
                   transformStyle: 'preserve-3d',
                 }}>
                   <div 
-                    onClick={() => handleCardClick(i, isNew)}
+                    onClick={() => handleCardClick(i, isNew, card.id)}
                     style={{
                       width: 'clamp(150px, 20vw, 210px)',
                       height: 'clamp(210px, 28vw, 294px)',
@@ -512,7 +545,7 @@ export default function PackOpener() {
                       transformStyle: 'preserve-3d',
                       transition: 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                       transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                      cursor: isFlipped ? 'default' : 'pointer',
+                      cursor: isFlipped ? 'zoom-in' : 'pointer',
                     }}
                   >
                   {/* FRONT (Face Down) */}
@@ -593,6 +626,11 @@ export default function PackOpener() {
                     Duplicate
                   </div>
                 )}
+                {isFlipped && (
+                  <div style={{ marginTop: '0.3rem', textAlign: 'center', fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em', animation: 'fadeIn 0.6s ease 0.2s both' }}>
+                    🔍 clique para detalhes
+                  </div>
+                )}
               </div>
             )})}
           </div>
@@ -629,6 +667,166 @@ export default function PackOpener() {
           )}
         </div>
       )}
+
+      {/* ── Lucky Pack Moment Overlay ── */}
+      {luckyMoment && (
+        <div
+          onClick={dismissLuckyMoment}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(20,12,0,0.92) 0%, rgba(0,0,0,0.97) 100%)',
+            animation: 'luckyFadeIn 0.5s ease',
+          }}
+        >
+          {/* Cinematic black bars */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '8vh', background: '#000', zIndex: 2 }} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '8vh', background: '#000', zIndex: 2 }} />
+
+          {/* God rays — radiating golden beams */}
+          {[...Array(12)].map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              top: '50%', left: '50%',
+              width: '3px',
+              height: '55vh',
+              transformOrigin: '50% 0%',
+              transform: `rotate(${i * 30}deg)`,
+              background: `linear-gradient(to bottom, rgba(255,215,0,${0.15 + (i % 3) * 0.05}), transparent)`,
+              animation: `godRaySpin ${8 + (i % 3) * 2}s linear infinite`,
+              filter: 'blur(4px)',
+              pointerEvents: 'none',
+            }} />
+          ))}
+
+          {/* Radial core glow */}
+          <div style={{
+            position: 'absolute',
+            width: '40vw', height: '40vw', maxWidth: 500, maxHeight: 500,
+            borderRadius: '50%',
+            background: 'radial-gradient(ellipse at 50% 50%, rgba(255,200,50,0.18) 0%, rgba(255,140,0,0.08) 40%, transparent 70%)',
+            animation: 'luckyCorePulse 1.5s ease-in-out infinite',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Floating gold particles */}
+          {[...Array(30)].map((_, i) => {
+            const left = 5 + (i * 37 % 90);
+            const size = 3 + (i * 13 % 6);
+            const delay = (i * 0.17) % 2.5;
+            const dur = 2.5 + (i * 0.3 % 2);
+            return (
+              <div key={i} style={{
+                position: 'absolute',
+                bottom: `${8 + (i * 11 % 30)}vh`,
+                left: `${left}%`,
+                width: size, height: size,
+                borderRadius: '50%',
+                background: i % 4 === 0 ? '#fff' : i % 3 === 0 ? '#ffd700' : i % 2 === 0 ? '#ffaa00' : '#ffe066',
+                boxShadow: `0 0 ${size * 2}px ${i % 2 === 0 ? '#ffd700' : '#fff'}`,
+                animation: `luckyParticle ${dur}s ${delay}s ease-in infinite`,
+                pointerEvents: 'none',
+              }} />
+            );
+          })}
+
+          {/* Card art featured */}
+          <div style={{
+            position: 'relative', zIndex: 5,
+            marginBottom: '2rem',
+            animation: 'luckyCardZoom 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
+          }}>
+            {/* Golden halo ring */}
+            <div style={{
+              position: 'absolute', inset: -20,
+              borderRadius: 20,
+              border: '2px solid rgba(255,215,0,0.6)',
+              boxShadow: '0 0 40px rgba(255,200,0,0.5), 0 0 80px rgba(255,160,0,0.3), inset 0 0 30px rgba(255,215,0,0.1)',
+              animation: 'luckyHaloFlicker 1.2s ease-in-out infinite',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              width: 'clamp(160px, 18vw, 220px)',
+              height: 'clamp(224px, 25.2vw, 308px)',
+              borderRadius: 14, overflow: 'hidden',
+              border: '3px solid #ffd700',
+              boxShadow: '0 0 60px rgba(255,215,0,0.7), 0 0 120px rgba(255,160,0,0.3)',
+            }}>
+              {luckyMoment.card.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={luckyMoment.card.image} alt={luckyMoment.card.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #2a1500, #5a3200)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>⚔</div>
+              )}
+            </div>
+          </div>
+
+          {/* Text block */}
+          <div style={{ position: 'relative', zIndex: 5, textAlign: 'center', animation: 'luckyTextRise 0.6s 0.3s ease both' }}>
+            <div style={{
+              fontFamily: 'Cinzel, serif',
+              fontSize: 'clamp(0.65rem, 1.5vw, 0.85rem)',
+              letterSpacing: '0.4em',
+              color: 'rgba(255,215,0,0.7)',
+              textTransform: 'uppercase',
+              marginBottom: '0.4rem',
+            }}>
+              ✦ Lucky Pack Moment ✦
+            </div>
+            <div style={{
+              fontFamily: 'Cinzel, serif',
+              fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+              fontWeight: 900,
+              letterSpacing: '0.12em',
+              background: 'linear-gradient(135deg, #ffe566, #ffd700, #ff9900, #ffd700, #ffe566)',
+              backgroundSize: '300% 100%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'luckyGoldShimmer 2s linear infinite',
+              textShadow: 'none',
+              filter: 'drop-shadow(0 0 20px rgba(255,200,0,0.5))',
+            }}>
+              PERFECT ROLL
+            </div>
+            <div style={{
+              fontFamily: 'Cinzel, serif',
+              fontSize: 'clamp(0.9rem, 2vw, 1.2rem)',
+              color: 'rgba(255,255,255,0.85)',
+              marginTop: '0.5rem',
+              letterSpacing: '0.05em',
+            }}>
+              {luckyMoment.card.name}
+            </div>
+            <div style={{
+              marginTop: '2rem',
+              fontSize: '0.75rem',
+              color: 'rgba(255,255,255,0.3)',
+              letterSpacing: '0.1em',
+              animation: 'fadeIn 1s 2s both',
+            }}>
+              Clique em qualquer lugar para continuar
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Card Detail Modal ── */}
+      {modalCardId && (() => {
+        const card = allCards.find(c => c.id === modalCardId);
+        if (!card) return null;
+        const instances = userCards.filter(uc => uc.cardId === modalCardId);
+        return (
+          <CardModal
+            card={card}
+            ownedQuantity={instances.length}
+            userInstances={instances}
+            onClose={() => setModalCardId(null)}
+          />
+        );
+      })()}
 
       {/* ── All keyframes ── */}
       <style>{`
@@ -706,6 +904,42 @@ export default function PackOpener() {
         }
         @keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeInUp  { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Lucky Pack Moment ── */
+        @keyframes luckyFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes luckyCardZoom {
+          0%   { opacity: 0; transform: scale(0.4) rotateY(-20deg); }
+          60%  { transform: scale(1.08) rotateY(4deg); opacity: 1; }
+          100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+        }
+        @keyframes luckyTextRise {
+          from { opacity: 0; transform: translateY(30px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes luckyGoldShimmer {
+          0%   { background-position: 0% 50%; }
+          100% { background-position: 300% 50%; }
+        }
+        @keyframes luckyCorePulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50%       { transform: scale(1.15); opacity: 1; }
+        }
+        @keyframes luckyHaloFlicker {
+          0%, 100% { box-shadow: 0 0 40px rgba(255,200,0,0.5), 0 0 80px rgba(255,160,0,0.3); opacity: 0.9; }
+          50%       { box-shadow: 0 0 70px rgba(255,215,0,0.8), 0 0 140px rgba(255,180,0,0.5); opacity: 1; }
+        }
+        @keyframes luckyParticle {
+          0%   { transform: translateY(0) scale(1); opacity: 1; }
+          80%  { opacity: 0.7; }
+          100% { transform: translateY(-60vh) scale(0.3); opacity: 0; }
+        }
+        @keyframes godRaySpin {
+          from { transform: rotate(var(--start-deg, 0deg)); }
+          to   { transform: rotate(calc(var(--start-deg, 0deg) + 360deg)); }
+        }
       `}</style>
     </div>
   );
