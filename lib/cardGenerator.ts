@@ -1,28 +1,75 @@
 import { Card, Rarity } from './types';
 import { QUALITY_RANGES } from './quality';
 
-const RARITY_WEIGHTS: Record<Rarity, number> = {
-  Common: 60,
-  Uncommon: 22,
-  Rare: 10,
-  Epic: 5,
-  Legendary: 2,
-  Mythic: 0.9,
-  Hero: 0.1,
+// ── Pack Tier System ─────────────────────────────────────────────────────────
+
+export type PackTier = 'starter' | 'epic' | 'mythic' | 'default';
+
+/**
+ * Distribuicao de raridade por tier de pacote.
+ * Cada pacote so pode gerar as raridades explicitamente listadas.
+ * Probabilidades somam 100% por tier.
+ */
+const PACK_RARITY_WEIGHTS: Record<PackTier, Partial<Record<Rarity, number>>> = {
+  starter: {
+    Common:   60,
+    Uncommon: 28,
+    Rare:     12,
+  },
+  epic: {
+    Common:    45,
+    Uncommon:  30,
+    Rare:      18,
+    Epic:       5,
+    Legendary:  2,
+  },
+  mythic: {
+    Common:    30,
+    Uncommon:  30,
+    Rare:      22,
+    Epic:      12,
+    Legendary:  4.5,
+    Mythic:     1,
+    Hero:       0.5,
+  },
+  default: {
+    Common:    60,
+    Uncommon:  22,
+    Rare:      10,
+    Epic:       5,
+    Legendary:  2,
+    Mythic:     0.9,
+    Hero:       0.1,
+  },
 };
 
 /**
- * Sorteia uma raridade com base na distribuicao percentual configurada em RARITY_WEIGHTS.
- * O algoritmo acumula pesos ate ultrapassar um valor aleatorio em [0, 100).
+ * Detecta o tier do pacote a partir do nome, para selecionar a tabela correta.
+ * Ordem de verificacao e importante: 'mythic' antes de 'epic'.
  */
-function rollRarity(): Rarity {
-  const roll = Math.random() * 100;
+export function detectPackTier(packName: string): PackTier {
+  const lower = packName.toLowerCase();
+  if (lower.includes('starter')) return 'starter';
+  if (lower.includes('mythic')) return 'mythic';
+  if (lower.includes('epic')) return 'epic';
+  return 'default';
+}
+
+/**
+ * Sorteia uma raridade usando pesos proporcionais do tier.
+ * So raridades com peso > 0 sao elegiveis.
+ */
+function rollRarityForTier(tier: PackTier): Rarity {
+  const weights = PACK_RARITY_WEIGHTS[tier];
+  const entries = (Object.entries(weights) as [Rarity, number][]).filter(([, w]) => w > 0);
+  const total = entries.reduce((sum, [, w]) => sum + w, 0);
+  const roll = Math.random() * total;
   let cumulative = 0;
-  for (const [rarity, weight] of Object.entries(RARITY_WEIGHTS) as [Rarity, number][]) {
+  for (const [rarity, weight] of entries) {
     cumulative += weight;
     if (roll < cumulative) return rarity;
   }
-  return 'Common';
+  return entries[0][0];
 }
 
 /**
@@ -41,31 +88,41 @@ function pickWeightedCard(cards: Card[]): Card {
 
 /**
  * Gera um conjunto de cartas para abertura de pack.
- * Etapas:
- * 1) filtra cartas ativas;
- * 2) sorteia raridade por peso global;
- * 3) escolhe carta por dropWeight dentro da raridade;
- * 4) se uma raridade nao tiver cartas, aplica fallback para outras raridades disponiveis.
+ *
+ * Fluxo:
+ * 1) Determina o numero real de cartas (Mythic tem 20% de chance de 5a carta bonus).
+ * 2) Para cada slot, sorteia raridade conforme a tabela do tier.
+ * 3) Escolhe carta por dropWeight dentro da raridade sorteada.
+ * 4) Fallback automatico se nao houver cartas disponiveis na raridade.
+ *
+ * - packTier: controla quais raridades podem aparecer e com qual frequencia.
+ * - Nao afeta bonusRoll, fusion, combat ou mintId.
  */
-export function rollCards(allCards: Card[], count: number): Card[] {
-  const activeCards = allCards.filter((c) => c.isActive);
+export function rollCards(allCards: Card[], count: number, packTier: PackTier = 'default'): Card[] {
+  const activeCards = allCards.filter(c => c.isActive);
   const result: Card[] = [];
 
-  for (let i = 0; i < count; i++) {
-    let rarity = rollRarity();
-    let rarityCards = activeCards.filter((c) => c.rarity === rarity);
+  // Mythic Pack: 5a carta bonus — roll independente apos gerar as 4 base
+  const actualCount = (packTier === 'mythic' && Math.random() < 0.20) ? count + 1 : count;
 
-    // Fallback to other rarities if none available
+  // Raridades disponiveis no tier (para fallback ordenado)
+  const tierRarities = Object.keys(PACK_RARITY_WEIGHTS[packTier]) as Rarity[];
+
+  for (let i = 0; i < actualCount; i++) {
+    let rarity = rollRarityForTier(packTier);
+    let rarityCards = activeCards.filter(c => c.rarity === rarity);
+
+    // Fallback 1: tenta outra raridade permitida pelo tier
     if (rarityCards.length === 0) {
-      const fallbackOrder: Rarity[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Hero'];
-      for (const fallback of fallbackOrder) {
-        const fb = activeCards.filter((c) => c.rarity === fallback);
-        if (fb.length > 0) {
-          rarityCards = fb;
-          rarity = fallback;
-          break;
-        }
+      for (const fallback of tierRarities) {
+        const fb = activeCards.filter(c => c.rarity === fallback);
+        if (fb.length > 0) { rarityCards = fb; rarity = fallback; break; }
       }
+    }
+
+    // Fallback 2: qualquer carta ativa (se o inventario do admin estiver vazio)
+    if (rarityCards.length === 0 && activeCards.length > 0) {
+      rarityCards = activeCards;
     }
 
     if (rarityCards.length > 0) {

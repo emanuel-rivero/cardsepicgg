@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import { User, Card, UserCard, Pack, UserPack, ToastMessage, Rarity, BattleEvent } from './types';
 import { db } from './db';
-import { rollCards } from './cardGenerator';
+import { rollCards, detectPackTier } from './cardGenerator';
 import ToastContainer from '@/components/Toast';
 import { calcFinalChance, rollFusion, getRandomCardByRarity, FUSION_BY_SOURCE, AFP_FAILURE_REWARD } from './fusion';
 
@@ -206,11 +206,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const consumed = db.userPacks.consume(user.id, packId);
       if (!consumed) return { success: false, error: 'No packs available.' };
 
-      // Roll cards
-      const count = Math.random() < 0.5
-        ? pack.cardsPerPack
-        : Math.max(3, pack.cardsPerPack - 1);
-      const cards: Card[] = rollCards(db.cards.getActive(), count);
+      // Determina tier e sorteia cartas conforme distribuicao do pack
+      const packTier = detectPackTier(pack.name);
+      const cards: Card[] = rollCards(db.cards.getActive(), pack.cardsPerPack, packTier);
 
       const existingCards = db.userCards.getByUser(user.id);
       const existingCardIds = new Set(existingCards.map(uc => uc.cardId));
