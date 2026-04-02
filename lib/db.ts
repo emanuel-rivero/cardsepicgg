@@ -1,6 +1,7 @@
 import { User, Card, Pack, UserCard, UserPack, BattleEvent } from './types';
 import { SEED_BATTLE_EVENTS } from './battle';
 import { generateMintId, generateBonusRoll } from './cardGenerator';
+import { getRollQuality } from './quality';
 
 const KEYS = {
   users: 'epicgg_users',
@@ -261,8 +262,17 @@ export const db = {
 
   userCards: {
     /** Lista todas as instancias de carta pertencentes ao usuario. */
-    getByUser: (userId: string): UserCard[] =>
-      getAll<UserCard>(KEYS.userCards).filter((uc) => uc.userId === userId),
+    getByUser: (userId: string): UserCard[] => {
+      const cards = getAll<UserCard>(KEYS.userCards).filter((uc) => uc.userId === userId);
+      return cards.map(uc => {
+        if (!uc.rollQuality) {
+          const cardDef = db.cards.getById(uc.cardId);
+          const { rollQuality, rollQualityPercent } = getRollQuality(uc.bonusRoll, cardDef?.rarity || 'Common');
+          return { ...uc, rollQuality, rollQualityPercent };
+        }
+        return uc;
+      });
+    },
     /**
      * Adiciona uma instancia de carta ao inventario do usuario.
      * Gera mintId e bonusRoll conforme raridade/origem.
@@ -273,6 +283,7 @@ export const db = {
       const cardDef = db.cards.getById(cardId);
       const rarity = cardDef ? cardDef.rarity : 'Common';
       const bonusRoll = generateBonusRoll(rarity, source);
+      const { rollQuality, rollQualityPercent } = getRollQuality(bonusRoll, rarity);
       const mintId = generateMintId();
 
       all.push({
@@ -282,6 +293,8 @@ export const db = {
         cardId,
         source,
         bonusRoll,
+        rollQuality,
+        rollQualityPercent,
         foil,
         acquiredAt: new Date().toISOString(),
       });

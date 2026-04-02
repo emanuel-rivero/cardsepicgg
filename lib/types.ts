@@ -48,6 +48,8 @@ export interface UserCard {
   cardId: string;
   source: 'pack' | 'fusion' | 'admin' | 'legacy';
   bonusRoll: number;
+  rollQuality?: string;
+  rollQualityPercent?: number;
   foil: boolean;
   acquiredAt: string;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, Rarity, CardType } from '@/lib/types';
+import { Card, Rarity, CardType, UserCard } from '@/lib/types';
 import styles from './Card.module.css';
 
 interface CardProps {
@@ -12,6 +12,7 @@ interface CardProps {
   animationDelay?: number;
   onClick?: () => void;
   hideLore?: boolean;
+  userCard?: UserCard;
 }
 
 const RARITY_ICON: Record<Rarity, string> = {
@@ -56,6 +57,7 @@ export default function CardComponent({
   animateIn = false,
   animationDelay = 0,
   hideLore = false,
+  userCard,
   onClick,
 }: CardProps) {
   const rarityLower = card.rarity.toLowerCase() as Lowercase<Rarity>;
@@ -71,7 +73,7 @@ export default function CardComponent({
 
   return (
     <div
-      className={`${styles.wrapper} ${styles[size]} ${animateIn ? styles.animateIn : ''}`}
+      className={`${styles.wrapper} ${styles[size]} ${animateIn ? styles.animateIn : ''} ${userCard?.rollQuality ? styles['quality-' + userCard.rollQuality.toLowerCase().replace(' ', '-')] : ''}`}
       style={animateIn ? { animationDelay: `${animationDelay}ms` } : undefined}
       onClick={onClick}
     >
@@ -99,6 +101,13 @@ export default function CardComponent({
           {/* Rarity shimmer */}
           {['Legendary', 'Mythic', 'Hero'].includes(card.rarity) && (
             <div className={styles[`${rarityLower}Shimmer` as keyof typeof styles]} />
+          )}
+
+          {/* Roll Quality Label */}
+          {userCard?.rollQuality && (
+            <div className={`${styles.qualityBadge} ${styles['badge-' + userCard.rollQuality.toLowerCase().replace(' ', '-')]}`}>
+              {userCard.rollQuality}
+            </div>
           )}
         </div>
 

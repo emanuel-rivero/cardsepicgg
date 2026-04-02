@@ -125,6 +125,12 @@ export function generateBonusRoll(rarity: Rarity, source: 'pack' | 'fusion' | 'a
   const [min, max] = T[source][rarity] || [0, 0];
   if (min === 0 && max === 0) return 0;
 
-  const roll = min + Math.random() * (max - min);
+  let rand = Math.random();
+  if (source === 'fusion') {
+    // Reduce chance of Low Roll and increase High/Perfect by biasing random number
+    rand = Math.pow(rand, 0.8);
+  }
+  
+  const roll = min + rand * (max - min);
   return parseFloat(roll.toFixed(2));
 }

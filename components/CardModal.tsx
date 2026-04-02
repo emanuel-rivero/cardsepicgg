@@ -64,10 +64,36 @@ export default function CardModal({ card, ownedQuantity, userInstances, onClose 
           {/* Lado Esquerdo: Arte e Display de Status Principal */}
           <div className={styles.leftCol}>
             <div className={styles.cardWrapper}>
-              <CardComponent card={card} size="lg" animateIn={true} hideLore={true} />
+              <CardComponent card={card} userCard={selectedInstance} size="lg" animateIn={true} hideLore={true} />
             </div>
             
             <div className={styles.infoGrid}>
+              <div className={styles.infoCard}>
+                <span className={styles.infoTitle}>PODER BASE</span>
+                <span className={styles.infoValue}>{basePower}</span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoTitle}>BÔNUS DE ROLL</span>
+                <span className={styles.infoValue} style={{ color: '#00d2d3' }}>
+                  +{bonus.toFixed(2)}
+                </span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoTitle}>QUALIDADE DO ROLL</span>
+                <span className={styles.infoValue} style={{ 
+                  color: selectedInstance?.rollQuality === 'Perfect Roll' ? '#ffd700' : 
+                         selectedInstance?.rollQuality === 'High Roll' ? '#4a9eff' : 
+                         selectedInstance?.rollQuality === 'Good Roll' ? '#2ecc71' : 'inherit'
+                }}>
+                  {selectedInstance?.rollQuality || '---'}
+                </span>
+              </div>
+              <div className={styles.infoCard}>
+                <span className={styles.infoTitle}>PODER FINAL</span>
+                <span className={styles.infoValue} style={{ fontSize: '1.2rem', color: '#fff', textShadow: '0 0 10px rgba(255,255,255,0.3)' }}>
+                  {totalPower.toFixed(2)}
+                </span>
+              </div>
               <div className={styles.infoCard}>
                 <span className={styles.infoTitle}>NÚMERO DO MINT</span>
                 <span className={styles.infoValue} style={{ color: '#4ade80' }}>
@@ -75,32 +101,8 @@ export default function CardModal({ card, ownedQuantity, userInstances, onClose 
                 </span>
               </div>
               <div className={styles.infoCard}>
-                <span className={styles.infoTitle}>CÓPIAS POSSUÍDAS</span>
-                <span className={styles.infoValue}>{ownedQuantity}</span>
-              </div>
-              <div className={styles.infoCard}>
-                <span className={styles.infoTitle}>RARIDADE</span>
-                <span className={styles.infoValue} style={{ color: `var(--rarity-${card.rarity.toLowerCase()})` }}>
-                  {card.rarity}
-                </span>
-              </div>
-              <div className={styles.infoCard}>
-                <span className={styles.infoTitle}>TIPO</span>
-                <span className={styles.infoValue}>{card.type || '---'}</span>
-              </div>
-              <div className={styles.infoCard}>
-                <span className={styles.infoTitle}>CLASSE</span>
-                <span className={styles.infoValue}>{card.cardClass}</span>
-              </div>
-              <div className={styles.infoCard}>
-                <span className={styles.infoTitle}>{selectedInstance?.bonusRoll ? 'BÔNUS DE PODER' : 'PODER DE BATALHA'}</span>
-                <span className={styles.infoValue} style={{ color: '#00d2d3' }}>
-                  {selectedInstance?.bonusRoll ? `+${selectedInstance.bonusRoll.toFixed(2)}` : RARITY_POWER[card.rarity]}
-                </span>
-              </div>
-              <div className={styles.infoCard} style={{ gridColumn: '1 / -1' }}>
                 <span className={styles.infoTitle}>ADQUIRIDO DE</span>
-                <span className={styles.infoValue} style={{ textTransform: 'uppercase', fontSize: '0.8rem', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', display: 'inline-block', alignSelf: 'flex-start' }}>
+                <span className={styles.infoValue} style={{ textTransform: 'uppercase' }}>
                   {selectedInstance?.source || 'DESCONHECIDO'}
                 </span>
               </div>
@@ -158,9 +160,24 @@ export default function CardModal({ card, ownedQuantity, userInstances, onClose 
                           {inst.source}
                         </span>
                       </div>
-                      <span style={{ color: inst.bonusRoll > 0 ? '#00d2d3' : 'inherit' }}>
-                        +{inst.bonusRoll.toFixed(2)}
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                        <span style={{ color: inst.bonusRoll > 0 ? '#00d2d3' : 'inherit', fontWeight: 'bold' }}>
+                          +{inst.bonusRoll.toFixed(2)}
+                        </span>
+                        {inst.rollQuality && (
+                          <span style={{ 
+                            fontSize: '0.65rem', 
+                            padding: '0.1rem 0.3rem', 
+                            borderRadius: '4px', 
+                            background: 'rgba(255,255,255,0.05)',
+                            color: inst.rollQuality === 'Perfect Roll' ? '#ffd700' : 
+                                   inst.rollQuality === 'High Roll' ? '#4a9eff' : 
+                                   inst.rollQuality === 'Good Roll' ? '#2ecc71' : 'inherit'
+                          }}>
+                            {inst.rollQuality}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

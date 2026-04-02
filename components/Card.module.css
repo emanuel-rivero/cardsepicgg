@@ -24,6 +24,17 @@
   flex-direction: column;
 }
 
+.quality-high-roll .card {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.quality-perfect-roll .card {
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+  border-color: var(--gold);
+  animation: perfect-glow 2s ease-in-out infinite;
+}
+
 .card:hover {
   transform: translateY(-6px) scale(1.02);
 }
@@ -271,6 +282,57 @@
   overflow: hidden;
 }
 
+/* ── Quality Badges ────────────────────────────────────────────────────── */
+.qualityBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  z-index: 10;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  pointer-events: none;
+}
+
+.sm .qualityBadge {
+  font-size: 0.45rem;
+  padding: 0.1rem 0.3rem;
+  top: 4px;
+  right: 4px;
+}
+
+.badge-low-roll {
+  background: rgba(40, 40, 45, 0.85);
+  color: var(--text-muted);
+}
+
+.badge-good-roll {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.badge-high-roll {
+  background: rgba(74, 158, 255, 0.25);
+  color: #4a9eff;
+  border-color: rgba(74, 158, 255, 0.5);
+  text-shadow: 0 0 8px rgba(74, 158, 255, 0.6);
+}
+
+.badge-perfect-roll {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.3), rgba(255, 215, 0, 0.1));
+  color: #ffd700;
+  border-color: #d4af37;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+  animation: pulse-gold 2s infinite;
+}
+
 /* ── Quantity Badge ────────────────────────────────────────────────────── */
 .quantityBadge {
   position: absolute;
@@ -315,4 +377,14 @@
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+
+@keyframes perfect-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(212, 175, 55, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(212, 175, 55, 0.5), 0 0 10px rgba(255, 255, 255, 0.2); }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
 }
