@@ -80,6 +80,11 @@ export default function AdminPage() {
   const [assignQty, setAssignQty] = useState(1);
   const [assignMsg, setAssignMsg] = useState('');
 
+  // Grant coins form
+  const [grantUserId, setGrantUserId] = useState('');
+  const [grantAmount, setGrantAmount] = useState(500);
+  const [grantMsg, setGrantMsg] = useState('');
+
   /** Recarrega datasets do admin a partir da camada db. */
   const refresh = useCallback(() => {
     setCards(db.cards.getAll());
@@ -237,6 +242,19 @@ export default function AdminPage() {
     db.userPacks.assign(assignUserId, assignPackId, assignQty);
     setAssignMsg(`Assigned ${assignQty}× pack to user.`);
     setTimeout(() => setAssignMsg(''), 3000);
+  };
+
+  /** Adiciona Epic! Points diretamente na conta do usuario selecionado. */
+  const handleGrantCoins = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!grantUserId || grantAmount <= 0) return;
+    const target = db.users.getById(grantUserId);
+    if (!target) return;
+    db.users.update(grantUserId, { epicPoints: (target.epicPoints || 0) + grantAmount });
+    setGrantMsg(`✓ +${grantAmount.toLocaleString()} Epic! Points adicionados a ${target.name}.`);
+    refresh();
+    refreshAll();
+    setTimeout(() => setGrantMsg(''), 4000);
   };
 
   // ── Battle Event handlers ──────────────────────────────────────────────
@@ -603,30 +621,77 @@ export default function AdminPage() {
         {/* ── USERS TAB ── */}
         {tab === 'users' && (
           <div className={styles.tabContent}>
-            <div className={styles.panel}>
-              <h2 className={styles.panelTitle}>All Users ({users.length})</h2>
-              <div className={styles.list}>
-                {users.map((user) => {
-                  const userPacksList = db.userPacks.getByUser(user.id);
-                  const totalPacks = userPacksList.reduce((s, up) => s + up.quantity, 0);
-                  const userCardsList = db.userCards.getByUser(user.id);
-                  const totalCards = userCardsList.length;
-                  return (
-                    <div key={user.id} className={styles.listItem}>
-                      <div className={styles.listItemInfo}>
-                        <div className={styles.listItemName}>
-                          {user.name}
-                          {user.isAdmin && <span className={styles.adminTag}>Admin</span>}
-                        </div>
-                        <div className={styles.listItemMeta}>
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{user.email}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>📦 {totalPacks} packs · 🃏 {totalCards} cards</span>
+            <div className={styles.twoCol}>
+
+              {/* Grant Coins Form */}
+              <div className={styles.panel}>
+                <h2 className={styles.panelTitle}>⚪ Conceder Epic! Points</h2>
+                <form onSubmit={handleGrantCoins} className={styles.form}>
+                  <div className="form-group">
+                    <label className="form-label">Usuário</label>
+                    <select className="form-input" value={grantUserId}
+                      onChange={(e) => setGrantUserId(e.target.value)} required>
+                      <option value="">Selecionar usuário...</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.email}) — ⚪ {(u.epicPoints || 0).toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Quantidade de Epic! Points</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={1000000}
+                      className="form-input"
+                      value={grantAmount}
+                      onChange={(e) => setGrantAmount(Math.max(1, +e.target.value))}
+                    />
+                  </div>
+                  {grantMsg && (
+                    <p className={styles.successMsg}>{grantMsg}</p>
+                  )}
+                  <button
+                    id="btn-grant-coins"
+                    type="submit"
+                    className="btn btn-gold"
+                    style={{ marginTop: '0.5rem' }}
+                  >
+                    ⚪ Adicionar Epic! Points
+                  </button>
+                </form>
+              </div>
+
+              {/* User list */}
+              <div className={styles.panel}>
+                <h2 className={styles.panelTitle}>All Users ({users.length})</h2>
+                <div className={styles.list}>
+                  {users.map((user) => {
+                    const userPacksList = db.userPacks.getByUser(user.id);
+                    const totalPacks = userPacksList.reduce((s, up) => s + up.quantity, 0);
+                    const userCardsList = db.userCards.getByUser(user.id);
+                    const totalCards = userCardsList.length;
+                    return (
+                      <div key={user.id} className={styles.listItem}>
+                        <div className={styles.listItemInfo}>
+                          <div className={styles.listItemName}>
+                            {user.name}
+                            {user.isAdmin && <span className={styles.adminTag}>Admin</span>}
+                          </div>
+                          <div className={styles.listItemMeta}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{user.email}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--gold)' }}>⚪ {(user.epicPoints || 0).toLocaleString()} pts</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>📦 {totalPacks} packs · 🃏 {totalCards} cards</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
+
             </div>
           </div>
         )}
