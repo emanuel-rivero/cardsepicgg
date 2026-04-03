@@ -105,6 +105,16 @@ export function calculateDuelResult(
           specialRuleApplied = (specialRuleApplied ? specialRuleApplied + ' +1' : '+1') + ' vs Orcs';
         }
       }
+      // Gigante de Gelo: Magus e Archer atacam de longe. Path of Wisdom tem resistência ao frio.
+      if (eventId === 'event_5') {
+        if (playerCard.cardClass === 'Archer' || playerCard.cardClass === 'Magus') {
+          playerPower += 2;
+          specialRuleApplied = '+2 Ataque à Distância';
+        } else if (playerCard.type === 'Path of Wisdom') {
+          playerPower += 1;
+          specialRuleApplied = '+1 Resistência ao Frio';
+        }
+      }
     }
 
     totalPlayerPower += playerPower;
@@ -185,6 +195,16 @@ export const SEED_BATTLE_EVENTS: Omit<BattleEvent, 'id'>[] = [
     // c3=Ogre Brute, c2=Skeletal Footman, u3=Ash Wraith (xamã do clã), r1=Dark Sorceress (feiticeira aliada), l4=Demon Lord Baal [representa Sho'grath]
     enemyCards: ['c3', 'c2', 'u3', 'r1', 'l4'],
     revealedCount: 1, // Apenas o primeiro bandido é visível — Sho'grath e o resto ficam ocultos
+    isActive: true,
+  },
+  {
+    name: 'O Bloqueio do Gigante de Gelo',
+    image: '/giant-event.png',
+    lore: 'Aventureiros! O grande desmoronamento da última semana bloqueou nossa única passagem para o Norte com escombros. Para piorar, um gigante furioso ronda a região, impedindo que nossos trabalhadores limpem o caminho. Precisamos de apoio para derrotar a criatura; só assim conseguiremos avançar.',
+    specialRule: '+2 poder para ataque à distância (Archer, Magus). +1 para resistência ao frio (Caminho da Sabedoria).',
+    reward: '1500 Moedas de Ouro (Epic Points) + 1x Pacote Legendário',
+    enemyCards: ['c2', 'u2', 'e3', 'l6'], // Skeletal Footman, Gargoyle Sentinel, Lava Behemoth (substituto pra monstro de neve forte), Ice Giant
+    revealedCount: 2,
     isActive: true,
   },
 ];

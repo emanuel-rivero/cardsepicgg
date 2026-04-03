@@ -63,6 +63,7 @@ export default function BattleLobbyPage() {
           const isCompleted = participatedEvents.includes(event.id);
           const diff = difficultyLabel(event.revealedCount, event.enemyCards.length);
           const isShograth = event.id === 'event_4';
+          const isGiant = event.id === 'event_5';
 
           return (
             <div
@@ -71,17 +72,23 @@ export default function BattleLobbyPage() {
               style={{
                 borderRadius: '16px',
                 overflow: 'hidden',
-                background: isShograth
+                background: isGiant
+                  ? 'linear-gradient(160deg, #001020 0%, #000510 100%)'
+                  : isShograth
                   ? 'linear-gradient(160deg, #1a0500 0%, #0d0200 100%)'
                   : 'rgba(255, 255, 255, 0.03)',
                 border: isCompleted
                   ? '1px solid rgba(80, 255, 80, 0.3)'
-                  : isShograth
+                  : isGiant
+                    ? '2px solid rgba(128, 202, 255, 0.6)'
+                    : isShograth
                     ? '2px solid rgba(200, 30, 30, 0.6)'
                     : '1px solid var(--border-subtle)',
                 boxShadow: isCompleted
                   ? '0 0 20px rgba(80, 255, 80, 0.1)'
-                  : isShograth
+                  : isGiant
+                    ? '0 10px 50px rgba(128,202,255,0.25), inset 0 0 40px rgba(0,0,0,0.5)'
+                    : isShograth
                     ? '0 10px 50px rgba(200,30,30,0.25), inset 0 0 40px rgba(0,0,0,0.5)'
                     : '0 10px 30px rgba(0,0,0,0.5)',
                 cursor: 'pointer',
@@ -93,7 +100,9 @@ export default function BattleLobbyPage() {
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-8px)';
                 if (!isCompleted) {
-                  e.currentTarget.style.boxShadow = isShograth
+                  e.currentTarget.style.boxShadow = isGiant
+                    ? '0 20px 60px rgba(128,202,255,0.4)'
+                    : isShograth
                     ? '0 20px 60px rgba(200,30,30,0.4)'
                     : '0 15px 40px rgba(212,175,55,0.15)';
                 }
@@ -102,7 +111,9 @@ export default function BattleLobbyPage() {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = isCompleted
                   ? '0 0 20px rgba(80, 255, 80, 0.1)'
-                  : isShograth
+                  : isGiant
+                    ? '0 10px 50px rgba(128,202,255,0.25)'
+                    : isShograth
                     ? '0 10px 50px rgba(200,30,30,0.25)'
                     : '0 10px 30px rgba(0,0,0,0.5)';
               }}
@@ -145,7 +156,9 @@ export default function BattleLobbyPage() {
               <div style={{ height: '200px', width: '100%', position: 'relative', marginTop: isShograth && !isCompleted ? '28px' : '0' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={event.image} alt={event.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', inset: 0, background: isShograth
+                <div style={{ position: 'absolute', inset: 0, background: isGiant
+                  ? 'linear-gradient(transparent 30%, rgba(0,20,40,0.8) 80%, #001020)'
+                  : isShograth
                   ? 'linear-gradient(transparent 30%, rgba(26,5,0,0.8) 80%, #1a0500)'
                   : 'linear-gradient(transparent, #0a0a0c)' }} />
 
@@ -163,9 +176,9 @@ export default function BattleLobbyPage() {
                 <h3 style={{
                   fontFamily: 'Cinzel, serif',
                   fontSize: '1.4rem',
-                  color: isCompleted ? '#aaa' : isShograth ? '#ff6060' : 'var(--text-primary)',
+                  color: isCompleted ? '#aaa' : isGiant ? '#80caff' : isShograth ? '#ff6060' : 'var(--text-primary)',
                   marginBottom: '0.5rem',
-                  textShadow: isShograth && !isCompleted ? '0 0 15px rgba(255,50,50,0.4)' : 'none',
+                  textShadow: isGiant && !isCompleted ? '0 0 15px rgba(128,202,255,0.4)' : isShograth && !isCompleted ? '0 0 15px rgba(255,50,50,0.4)' : 'none',
                 }}>
                   {event.name}
                 </h3>
@@ -187,16 +200,16 @@ export default function BattleLobbyPage() {
                   </p>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${isShograth ? 'rgba(200,30,30,0.2)' : 'rgba(255,255,255,0.05)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '1rem', borderTop: `1px solid ${isGiant ? 'rgba(128,202,255,0.2)' : isShograth ? 'rgba(200,30,30,0.2)' : 'rgba(255,255,255,0.05)'}` }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      Inimigos: <strong style={{ color: isShograth ? '#ff6060' : 'var(--text-primary)' }}>{event.enemyCards.length} cartas</strong>
+                      Inimigos: <strong style={{ color: isGiant ? '#80caff' : isShograth ? '#ff6060' : 'var(--text-primary)' }}>{event.enemyCards.length} cartas</strong>
                     </div>
                     <div style={{ fontSize: '0.8rem' }}>
                       Dificuldade: <strong style={{ color: diff.color }}>{diff.label}</strong>
                     </div>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: isShograth ? '#ff6060' : 'var(--purple)' }}>
+                  <div style={{ fontSize: '0.8rem', color: isGiant ? '#80caff' : isShograth ? '#ff6060' : 'var(--purple)' }}>
                     {isCompleted ? 'Volte semana que vem' : isShograth ? 'Aceitar Contrato ➔' : 'Entrar na Arena ➔'}
                   </div>
                 </div>

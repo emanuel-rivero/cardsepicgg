@@ -1,5 +1,5 @@
 import { User, Card, Pack, UserCard, UserPack, BattleEvent } from './types';
-import { SEED_BATTLE_EVENTS } from './battle';
+import { SEED_BATTLE_EVENTS, ensureNewSeedEvents } from './battle';
 import { generateMintId, generateBonusRoll } from './cardGenerator';
 import { getRollQuality } from './quality';
 
@@ -81,12 +81,13 @@ const RAW_CARDS: any[] = [
   { id: 'e4', name: 'Elder Treant', subtitle: 'Heart of the Forest', rarity: 'Epic', image: '', type: 'Path of Wisdom', cardClass: 'Druid', shortLore: 'The roots of the world speak through his ancient bark.', isActive: true, foilOptional: true, dropWeight: 28 },
   { id: 'e5', name: 'Runic Golem', subtitle: 'Arcane Defender', rarity: 'Epic', image: '', type: 'Path of Arms', cardClass: 'Defender', shortLore: 'Powered by crystals from the first age.', isActive: true, foilOptional: true, dropWeight: 28 },
 
-  // ── Legendary (5) ──
+  // ── Legendary (6) ──
   { id: 'l1', name: 'Shadow King', subtitle: 'Endless Night', rarity: 'Legendary', image: '', type: 'Path of Subterfuge', cardClass: 'Shadow Dancer', shortLore: 'He who extinguished the last sun.', isActive: true, foilOptional: true, dropWeight: 10 },
   { id: 'l2', name: 'Ancient Dragon', subtitle: 'First Flame', rarity: 'Legendary', image: '', type: 'Path of Arms', cardClass: 'Mutant', shortLore: 'The oldest living creature in the known world.', isActive: true, foilOptional: true, dropWeight: 10 },
   { id: 'l3', name: 'Archmage of Storms', subtitle: 'Master of Skies', rarity: 'Legendary', image: '', type: 'Path of Wisdom', cardClass: 'Magus', shortLore: 'He commands tornadoes with a mere gesture.', isActive: true, foilOptional: true, dropWeight: 10 },
   { id: 'l4', name: 'Demon Lord Baal', subtitle: 'Conqueror of Abyss', rarity: 'Legendary', image: '', type: 'Path of Subterfuge', cardClass: 'Demon Hunter', shortLore: 'Ruler of the seventh circle of fire.', isActive: true, foilOptional: true, dropWeight: 10 },
   { id: 'l5', name: 'Queen of Thorns', subtitle: 'Mother of Wilds', rarity: 'Legendary', image: '', type: 'Path of Wisdom', cardClass: 'Druid', shortLore: 'Her beauty is matched only by her lethal venoms.', isActive: true, foilOptional: true, dropWeight: 10 },
+  { id: 'l6', name: 'Ymir, Gigante de Gelo', subtitle: 'Bringer of Avalanches', rarity: 'Legendary', image: '/giant-card.png', type: 'Path of Arms', cardClass: 'Barbarian', shortLore: 'A verdadeira fúria do inverno encarnada em pedra e gelo. Despertou com o desmoronamento no Norte.', isActive: true, foilOptional: true, dropWeight: 10 },
 
   // ── Mythic (5) ──
   { id: 'm1', name: 'The Void Leviathan', subtitle: 'Eater of Realms', rarity: 'Mythic', image: '', type: 'Path of Wisdom', cardClass: 'Necromant', shortLore: 'It feasts on the stars themselves.', isActive: true, foilOptional: true, dropWeight: 2 },
@@ -150,7 +151,33 @@ export const db = {
   seed() {
     if (typeof window === 'undefined') return;
     
-    if (localStorage.getItem(KEYS.seeded)) return;
+    if (localStorage.getItem(KEYS.seeded)) {
+      // Hot-sync new cards added via code updates
+      const storedCards = getAll<Card>(KEYS.cards);
+      let cardsChanged = false;
+      INITIAL_CARDS.forEach(ic => {
+        if (!storedCards.find(sc => sc.id === ic.id)) {
+          storedCards.push(ic);
+          cardsChanged = true;
+        }
+      });
+      if (cardsChanged) setAll(KEYS.cards, storedCards);
+
+      // Hot-sync new events added via code updates
+      const storedEvents = getAll<BattleEvent>(KEYS.battleEvents);
+      const toAdd = ensureNewSeedEvents(storedEvents);
+      if (toAdd.length > 0) {
+        setAll(KEYS.battleEvents, [...storedEvents, ...toAdd]);
+      }
+
+      // Hot-sync: Garante que o Admin possua a carta Gigante de Gelo
+      const adminCards = db.userCards.getByUser('admin_001');
+      if (!adminCards.some(uc => uc.cardId === 'l6')) {
+        db.userCards.addCard('admin_001', 'l6', true, 'admin');
+      }
+
+      return;
+    }
 
     setAll(KEYS.cards, INITIAL_CARDS);
     setAll(KEYS.packs, INITIAL_PACKS);
@@ -183,6 +210,9 @@ export const db = {
       { id: uid(), userId: 'admin_001', packId: 'p2', quantity: 3 },
     ];
     setAll(KEYS.userPacks, adminPacks);
+
+    // Give admin the new card
+    db.userCards.addCard('admin_001', 'l6', true, 'admin');
 
     localStorage.setItem(KEYS.seeded, '1');
   },
